@@ -1,1 +1,3 @@
-// Flows will be imported for their side effects in this file.
+import '@/ai/flows/product-information-assistant.ts';
+import '@/ai/flows/order-assistance-chatbot.ts';
+import '@/ai/flows/product-search-assistant.ts';
