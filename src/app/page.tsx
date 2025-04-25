@@ -50,7 +50,7 @@ export default function Home() {
               </p>
               <div className="flex items-center justify-between">
                 <span className="text-lg font-bold">
-                  150 ر.س
+                  150 د.ت
                 </span>
                 <button className="bg-primary hover:bg-primary-foreground text-primary-foreground font-bold py-2 px-4 rounded-full transition-colors duration-300">
                   أضف إلى السلة
@@ -76,7 +76,7 @@ export default function Home() {
               </p>
               <div className="flex items-center justify-between">
                 <span className="text-lg font-bold">
-                  80 ر.س
+                  80 د.ت
                 </span>
                 <button className="bg-primary hover:bg-primary-foreground text-primary-foreground font-bold py-2 px-4 rounded-full transition-colors duration-300">
                   أضف إلى السلة
@@ -102,7 +102,7 @@ export default function Home() {
               </p>
               <div className="flex items-center justify-between">
                 <span className="text-lg font-bold">
-                  250 ر.س
+                  250 د.ت
                 </span>
                 <button className="bg-primary hover:bg-primary-foreground text-primary-foreground font-bold py-2 px-4 rounded-full transition-colors duration-300">
                   أضف إلى السلة
@@ -115,3 +115,4 @@ export default function Home() {
     </div>
   );
 }
+

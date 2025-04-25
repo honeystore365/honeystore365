@@ -1,15 +1,21 @@
-
 import Link from 'next/link';
 import {Button} from '@/components/ui/button';
 import {SidebarTrigger} from '@/components/ui/sidebar';
+import Image from 'next/image';
 
 export function SiteHeader() {
   return (
     <header className="bg-card py-4 shadow-sm sticky top-0 z-50">
       <div className="container mx-auto flex items-center justify-between">
         {/* Logo */}
-        <Link href="/" className="text-2xl font-bold text-primary">
-          منحلة الرحيق
+        <Link href="/" className="flex items-center">
+          <Image
+            src="/logo.png"
+            alt="منحلة الرحيق"
+            width={50}
+            height={50}
+            className="mr-2"
+          />
         </Link>
 
         {/* Navigation */}
@@ -46,3 +52,4 @@ export function SiteHeader() {
     </header>
   );
 }
+

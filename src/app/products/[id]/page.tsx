@@ -1,4 +1,5 @@
 
+
 export default function ProductDetailPage({ params }: { params: { id: string } }) {
   const productId = params.id;
 
@@ -24,7 +25,7 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
           </p>
           <div className="flex items-center justify-between mb-6">
             <span className="text-2xl font-bold">
-              150 ر.س
+              150 د.ت
             </span>
             <button className="bg-primary hover:bg-primary-foreground text-primary-foreground font-bold py-2 px-8 rounded-full transition-colors duration-300">
               أضف إلى السلة
@@ -36,3 +37,4 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
     </div>
   );
 }
+

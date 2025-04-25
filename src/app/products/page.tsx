@@ -1,4 +1,5 @@
 
+
 export default function ProductsPage() {
   return (
     <div className="container mx-auto py-10">
@@ -33,9 +34,9 @@ export default function ProductsPage() {
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm"
           >
             <option>الكل</option>
-            <option>أقل من 100 ر.س</option>
-            <option>100 - 200 ر.س</option>
-            <option>أكثر من 200 ر.س</option>
+            <option>أقل من 100 د.ت</option>
+            <option>100 - 200 د.ت</option>
+            <option>أكثر من 200 د.ت</option>
           </select>
         </div>
       </div>
@@ -58,7 +59,7 @@ export default function ProductsPage() {
             </p>
             <div className="flex items-center justify-between">
               <span className="text-lg font-bold">
-                150 ر.س
+                150 د.ت
               </span>
               <button className="bg-primary hover:bg-primary-foreground text-primary-foreground font-bold py-2 px-4 rounded-full transition-colors duration-300">
                 أضف إلى السلة
@@ -82,7 +83,7 @@ export default function ProductsPage() {
             </p>
             <div className="flex items-center justify-between">
               <span className="text-lg font-bold">
-                80 ر.س
+                80 د.ت
               </span>
               <button className="bg-primary hover:bg-primary-foreground text-primary-foreground font-bold py-2 px-4 rounded-full transition-colors duration-300">
                 أضف إلى السلة
@@ -106,7 +107,7 @@ export default function ProductsPage() {
             </p>
             <div className="flex items-center justify-between">
               <span className="text-lg font-bold">
-                250 ر.س
+                250 د.ت
               </span>
               <button className="bg-primary hover:bg-primary-foreground text-primary-foreground font-bold py-2 px-4 rounded-full transition-colors duration-300">
                 أضف إلى السلة
@@ -118,3 +119,4 @@ export default function ProductsPage() {
     </div>
   );
 }
+

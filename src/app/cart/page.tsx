@@ -1,4 +1,5 @@
 
+
 export default function CartPage() {
   return (
     <div className="container mx-auto py-10">
@@ -37,7 +38,7 @@ export default function CartPage() {
             </button>
           </div>
           <span className="text-lg font-bold ml-4">
-            150 ر.س
+            150 د.ت
           </span>
         </div>
         {/* Cart Item 2 */}
@@ -69,7 +70,7 @@ export default function CartPage() {
             </button>
           </div>
           <span className="text-lg font-bold ml-4">
-            80 ر.س
+            80 د.ت
           </span>
         </div>
       </div>
@@ -77,7 +78,7 @@ export default function CartPage() {
       {/* Cart Summary */}
       <div className="mt-8 flex justify-between items-center">
         <span className="text-xl font-bold">
-          المجموع الكلي: 230 ر.س
+          المجموع الكلي: 230 د.ت
         </span>
         <button className="bg-primary hover:bg-primary-foreground text-primary-foreground font-bold py-3 px-8 rounded-full transition-colors duration-300">
           إتمام الشراء
@@ -86,3 +87,4 @@ export default function CartPage() {
     </div>
   );
 }
+

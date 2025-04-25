@@ -1,4 +1,5 @@
 
+
 export default function CheckoutPage() {
   return (
     <div className="container mx-auto py-10">
@@ -29,7 +30,7 @@ export default function CheckoutPage() {
                 </p>
               </div>
               <span className="text-lg font-bold">
-                150 ر.س
+                150 د.ت
               </span>
             </div>
             {/* Cart Item 2 */}
@@ -48,7 +49,7 @@ export default function CheckoutPage() {
                 </p>
               </div>
               <span className="text-lg font-bold">
-                80 ر.س
+                80 د.ت
               </span>
             </div>
           </div>
@@ -57,7 +58,7 @@ export default function CheckoutPage() {
               المجموع الكلي:
             </span>
             <span className="text-xl font-bold">
-              230 ر.س
+              230 د.ت
             </span>
           </div>
         </div>
@@ -110,3 +111,4 @@ export default function CheckoutPage() {
     </div>
   );
 }
+
