@@ -19,6 +19,9 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: 'منحلة الرحيق',
   description: 'Boutique en ligne de miel et produits dérivés',
+  icons: {
+    icon: '/icon.png',
+  },
 };
 
 export default function RootLayout({
@@ -41,4 +44,5 @@ export default function RootLayout({
     </html>
   );
 }
+
 
