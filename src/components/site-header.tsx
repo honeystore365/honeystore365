@@ -1,8 +1,12 @@
+"use client";
 import Link from 'next/link';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { SidebarTrigger } from '@/components/ui/sidebar';
-import { cn } from '@/lib/utils'; // Assurez-vous que cn est importé
+import { cn } from '@/lib/utils';
+import { supabase } from '@/lib/supabaseClient';
+import { useRouter, usePathname } from 'next/navigation';
+import { useEffect, useState } from 'react'; // Assurez-vous que cn est importé
 
 // --- Constants ---
 const LOGO_URL = "https://via.placeholder.com/60x60.png?text=Logo"; // TODO: Remplacer par le vrai logo
@@ -24,17 +28,36 @@ const navigationLinks = [
   { href: "/profile", label: "حسابي" },
 ];
 
+
 // TODO: Gérer l'état d'authentification
 const authLinks = [
-    { href: "/auth/login", label: "تسجيل الدخول", variant: "outline" as const, extraClasses: "border-honey text-honey hover:bg-honey/10" },
-    { href: "/auth/register", label: "انشاء حساب", variant: "default" as const, extraClasses: "bg-honey hover:bg-honey-dark" },
+ { href: "/auth/login", label: "تسجيل الدخول", variant: "outline" as const, extraClasses: "border-honey text-honey hover:bg-honey/10" },
+ { href: "/auth/register", label: "انشاء حساب", variant: "default" as const, extraClasses: "bg-honey hover:bg-honey-dark" },
 ];
 
 // --- Component ---
 
 export function SiteHeader() {
+ const [session, setSession] = useState<any>(null);
+ const router = useRouter();
+ const pathname = usePathname();
+
+ useEffect(() => {
+   const fetchSession = async () => {
+     const { data: { session } } = await supabase.auth.getSession({ cache: 'no-store' });
+     setSession(session);
+   };
+
+   fetchSession();
+ }, []);
+
   // TODO: Obtenir le nombre d'articles dans le panier
   const cartItemCount = 0; // Placeholder
+
+  const handleSignOut = async () => {
+   await supabase.auth.signOut();
+   router.push('/auth/login');
+ };
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-honey/20 bg-white/80 shadow-sm backdrop-blur-md">
@@ -79,11 +102,20 @@ export function SiteHeader() {
 
         {/* Auth Buttons Section */}
         <div className="hidden items-center space-x-4 md:flex">
-           {authLinks.map((link) => (
+         {session && pathname !== '/auth/login' ? (
+           <>
+             <span className="text-gray-700 font-medium">{session.user.email}</span>
+             <Button spacing="lg" variant="outline" className="border-red-500 text-red-500 hover:bg-red-500/10" onClick={handleSignOut}>
+               Sign Out
+             </Button>
+           </>
+         ) : (
+           authLinks.map((link) => (
              <Button spacing="lg" key={link.href} variant={link.variant} className={link.extraClasses} asChild>
                <Link href={link.href}>{link.label}</Link>
              </Button>
-           ))}
+           ))
+         )}
         </div>
 
         {/* Mobile Menu Trigger */}

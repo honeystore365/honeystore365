@@ -33,41 +33,33 @@ export default function RegisterPage() {
       return;
     }
 
-    if (data?.user) {
-      console.log('Inserting profile...');
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .insert([
-          { id: data.user.id, username: email, updated_at: new Date() }
-        ]);
-
-      if (profileError) {
-        console.error('Error creating profile:', profileError);
-        console.log('Profile insert failed:', profileError);
-      } else {
-        console.log('Profile inserted successfully.');
-      }
-        // Optionally handle profile creation error, maybe delete the user?
-      }
-
-      console.log('Inserting customer...');
-      const { error: customerError } = await supabase
-        .from('customers')
-        .insert([
-          { id: data.user.id, first_name: firstName, last_name: lastName, email: email, created_at: new Date() }
-        ]);
-
-      if (customerError) {
-        console.error('Error creating customer:', customerError);
-        console.log('Customer insert failed:', customerError);
-      } else {
-        console.log('Customer inserted successfully.');
-      }
-        // Optionally handle customer creation error
-      }
-
-      router.push('/auth/login'); // Redirect to login after successful registration
+    if (!data?.user) return;
+    
+    const userId = data.user.id
+    // Insert into profiles table
+    const { error: profileError } = await supabase
+      .from('profiles')
+      .insert([
+        { id: userId, username: email, updated_at: new Date() }
+      ]);
+    if (profileError) {
+      console.error('Error creating profile:', profileError);
+    } else {
+      console.log('Profile inserted successfully.');
     }
+    // Insert into customers table
+    const { error: customerError } = await supabase
+      .from('customers')
+      .insert([
+        { id: userId, first_name: firstName, last_name: lastName, email: email, created_at: new Date() }
+      ]);
+    if (customerError) {
+      console.error('Error creating customer:', customerError);
+    } else {
+      console.log('Customer inserted successfully.');
+    }
+
+    router.push('/auth/login'); // Redirect to login after successful registration
   };
 
   return (
@@ -151,4 +143,4 @@ export default function RegisterPage() {
       </div>
     </div>
   );
-}
+};

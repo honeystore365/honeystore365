@@ -33,6 +33,9 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
   const [customers, setCustomers] = useState<Customer[]>([]);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+
   const [categories, setCategories] = useState<Category[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [error, setError] = useState('');
@@ -41,7 +44,7 @@ export default function AdminPage() {
   const ADMIN_EMAIL = 'honeystore365@gmail.com';
 
   useEffect(() => {
-    checkAdminStatusAndFetchData();
+   checkAdminStatusAndFetchData();
   }, []);
 
   const checkAdminStatusAndFetchData = async () => {
@@ -63,6 +66,27 @@ export default function AdminPage() {
       setError('Access denied. You are not authorized to view this page.');
       setLoading(false);
     }
+  };
+
+  const handleAdminLogin = async () => {
+    setLoading(true);
+    setError('');
+
+    const { data: { user, session }, error } = await supabase.auth.signInWithPassword({
+      email: email,
+      password: password,
+    });
+
+    if (error) {
+      console.error('Error signing in:', error);
+      setError(error.message);
+      setIsAdmin(false);
+    } else {
+      setIsAdmin(true);
+      fetchAdminData();
+    }
+
+    setLoading(false);
   };
 
   const fetchAdminData = async () => {
@@ -111,6 +135,9 @@ export default function AdminPage() {
   const [newCustomer, setNewCustomer] = useState({ first_name: '', last_name: '', email: '' });
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
 
+  // CRUD operations for categories
+  const [newCategory, setNewCategory] = useState({ name: '', description: '' });
+  const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const handleCreateCustomer = async () => {
     setLoading(true);
     setError('');
@@ -165,8 +192,60 @@ export default function AdminPage() {
     setLoading(false);
   };
 
+  const handleCreateCategory = async () => {
+    setLoading(true);
+    setError('');
+    const { data, error } = await supabase
+      .from('categories')
+      .insert([newCategory]);
 
-  if (loading) {
+    if (error) {
+      console.error('Error creating category:', error);
+      setError(error.message);
+    } else {
+      setNewCategory({ name: '', description: '' });
+      fetchAdminData(); // Refresh data
+    }
+    setLoading(false);
+  };
+
+  const handleUpdateCategory = async () => {
+    if (!selectedCategory) return;
+
+    setLoading(true);
+    setError('');
+    const { data, error } = await supabase
+      .from('categories')
+      .update(selectedCategory)
+      .eq('id', selectedCategory.id);
+
+    if (error) {
+      console.error('Error updating category:', error);
+      setError(error.message);
+    } else {
+      setSelectedCategory(null);
+      fetchAdminData(); // Refresh data
+    }
+    setLoading(false);
+  };
+
+  const handleDeleteCategory = async (categoryId: string) => {
+    setLoading(true);
+    setError('');
+    const { data, error } = await supabase
+      .from('categories')
+      .delete()
+      .eq('id', categoryId);
+
+    if (error) {
+      console.error('Error deleting category:', error);
+      setError(error.message);
+    } else {
+      fetchAdminData(); // Refresh data
+    }
+    setLoading(false);
+  };
+   if (loading) {
     return <div className="container mx-auto py-10 text-center">Loading admin panel...</div>;
   }
 
@@ -175,7 +254,31 @@ export default function AdminPage() {
   }
 
   if (!isAdmin) {
-    return <div className="container mx-auto py-10 text-center text-red-500">Access denied.</div>;
+   return (
+     <div className="container mx-auto py-10">
+       <h1 className="text-3xl font-bold mb-8 text-center">Admin Login</h1>
+       <div className="flex flex-col items-center">
+         <input
+           type="email"
+           placeholder="Email"
+           className="border rounded p-2 mb-2 w-full max-w-md"
+           value={email}
+           onChange={(e) => setEmail(e.target.value)}
+         />
+         <input
+           type="password"
+           placeholder="Password"
+           className="border rounded p-2 mb-4 w-full max-w-md"
+           value={password}
+           onChange={(e) => setPassword(e.target.value)}
+         />
+         <button className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded" onClick={handleAdminLogin}>
+           Login
+         </button>
+         {error && <p className="text-red-500 mt-2">{error}</p>}
+       </div>
+     </div>
+   );
   }
 
   return (
@@ -268,18 +371,73 @@ export default function AdminPage() {
       </div>
 
       {/* Categories Section */}
-      <div className="mb-8">
-        <h2 className="text-2xl font-semibold mb-4">Categories</h2>
-         {categories.length > 0 ? (
-          <ul className="list-disc pl-5">
-            {categories.map(category => (
-              <li key={category.id}>{category.name}</li>
-            ))}
-          </ul>
-        ) : (
-          <p>No categories found.</p>
-        )}
-      </div>
+     <div className="mb-8">
+       <h2 className="text-2xl font-semibold mb-4">Categories</h2>
+
+       {/* Create Category Form */}
+       <div className="mb-4">
+         <h3 className="text-lg font-semibold mb-2">Create Category</h3>
+         <input
+           type="text"
+           placeholder="Name"
+           className="border rounded p-2 mr-2"
+           value={newCategory.name}
+           onChange={(e) => setNewCategory({ ...newCategory, name: e.target.value })}
+         />
+         <input
+           type="text"
+           placeholder="Description"
+           className="border rounded p-2 mr-2"
+           value={newCategory.description}
+           onChange={(e) => setNewCategory({ ...newCategory, description: e.target.value })}
+         />
+         <button className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded" onClick={handleCreateCategory}>
+           Create
+         </button>
+       </div>
+
+       {categories.length > 0 ? (
+         <ul className="list-disc pl-5">
+           {categories.map(category => (
+             <li key={category.id}>
+               {category.name} - {category.description}
+               <button className="ml-2 text-blue-500 hover:text-blue-700" onClick={() => setSelectedCategory(category)}>
+                 Update
+               </button>
+               <button className="ml-2 text-red-500 hover:text-red-700" onClick={() => handleDeleteCategory(category.id)}>
+                 Delete
+               </button>
+             </li>
+           ))}
+         </ul>
+       ) : (
+         <p>No categories found.</p>
+       )}
+
+       {/* Update Category Form */}
+       {selectedCategory && (
+         <div className="mt-4">
+           <h3 className="text-lg font-semibold mb-2">Update Category</h3>
+           <input
+             type="text"
+             placeholder="Name"
+             className="border rounded p-2 mr-2"
+             value={selectedCategory.name}
+             onChange={(e) => setSelectedCategory({ ...selectedCategory, name: e.target.value })}
+           />
+           <input
+             type="text"
+             placeholder="Description"
+             className="border rounded p-2 mr-2"
+             value={selectedCategory.description || ''}
+             onChange={(e) => setSelectedCategory({ ...selectedCategory, description: e.target.value })}
+           />
+           <button className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded" onClick={handleUpdateCategory}>
+             Update
+           </button>
+         </div>
+       )}
+     </div>
 
       {/* Products Section */}
       <div>
@@ -295,5 +453,5 @@ export default function AdminPage() {
         )}
       </div>
     </div>
-  );
+ );
 }
