@@ -1,19 +1,104 @@
 
+'use client';
+
+import { useState } from 'react';
+import { supabase } from '@/lib/supabaseClient';
+import { useRouter } from 'next/navigation';
+
 export default function RegisterPage() {
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [error, setError] = useState('');
+  const router = useRouter();
+
+  const handleSignUp = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setError('');
+
+    if (password !== confirmPassword) {
+      setError('Passwords do not match.');
+      return;
+    }
+
+    const { data, error: authError } = await supabase.auth.signUp({
+      email,
+      password,
+    });
+
+    if (authError) {
+      setError(authError.message);
+      return;
+    }
+
+    if (data?.user) {
+      console.log('Inserting profile...');
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .insert([
+          { id: data.user.id, username: email, updated_at: new Date() }
+        ]);
+
+      if (profileError) {
+        console.error('Error creating profile:', profileError);
+        console.log('Profile insert failed:', profileError);
+      } else {
+        console.log('Profile inserted successfully.');
+      }
+        // Optionally handle profile creation error, maybe delete the user?
+      }
+
+      console.log('Inserting customer...');
+      const { error: customerError } = await supabase
+        .from('customers')
+        .insert([
+          { id: data.user.id, first_name: firstName, last_name: lastName, email: email, created_at: new Date() }
+        ]);
+
+      if (customerError) {
+        console.error('Error creating customer:', customerError);
+        console.log('Customer insert failed:', customerError);
+      } else {
+        console.log('Customer inserted successfully.');
+      }
+        // Optionally handle customer creation error
+      }
+
+      router.push('/auth/login'); // Redirect to login after successful registration
+    }
+  };
+
   return (
-    <div className="container mx-auto py-10">
+    <div className="py-10">
       <h1 className="text-3xl font-bold mb-8 text-center">
         إنشاء حساب جديد
       </h1>
 
-      <div className="max-w-md mx-auto">
-        <form className="flex flex-col gap-4">
+      <div className="max-w-md mx-auto px-4 py-8 bg-white rounded-xl shadow-lg">
+        <form className="flex flex-col gap-4" onSubmit={handleSignUp}>
+          {error && <p className="text-red-500 text-center">{error}</p>}
           <label className="flex flex-col">
-            الاسم:
+            الاسم الأول:
             <input
               type="text"
               className="border rounded-md p-2"
-              placeholder="الاسم الكامل"
+              placeholder="الاسم الأول"
+              value={firstName}
+              onChange={(e) => setFirstName(e.target.value)}
+              required
+            />
+          </label>
+          <label className="flex flex-col">
+            الاسم الأخير:
+            <input
+              type="text"
+              className="border rounded-md p-2"
+              placeholder="الاسم الأخير"
+              value={lastName}
+              onChange={(e) => setLastName(e.target.value)}
+              required
             />
           </label>
           <label className="flex flex-col">
@@ -22,6 +107,9 @@ export default function RegisterPage() {
               type="email"
               className="border rounded-md p-2"
               placeholder="البريد الإلكتروني"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
             />
           </label>
           <label className="flex flex-col">
@@ -30,6 +118,9 @@ export default function RegisterPage() {
               type="password"
               className="border rounded-md p-2"
               placeholder="كلمة المرور"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
             />
           </label>
           <label className="flex flex-col">
@@ -38,10 +129,13 @@ export default function RegisterPage() {
               type="password"
               className="border rounded-md p-2"
               placeholder="تأكيد كلمة المرور"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              required
             />
           </label>
 
-          <button className="bg-primary hover:bg-primary-foreground text-primary-foreground font-bold py-3 rounded-full transition-colors duration-300">
+          <button type="submit" className="bg-primary hover:bg-primary-foreground text-primary-foreground font-bold py-3 rounded-full transition-colors duration-300">
             إنشاء حساب
           </button>
         </form>

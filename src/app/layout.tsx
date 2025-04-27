@@ -1,36 +1,26 @@
 import type {Metadata} from 'next';
-import {Geist, Geist_Mono} from 'next/font/google';
 import './globals.css';
 import {SidebarProvider} from '@/components/ui/sidebar';
 import {SiteHeader} from '@/components/site-header';
 import {Toaster} from '@/components/ui/toaster';
-
-// Arabic typography
-import {Amiri} from 'next/font/google';
-
-const amiri = Amiri({
-  subsets: ['arabic'],
-  weight: ['400', '700'],
-  variable: '--font-amiri',
-  display: 'swap',
-});
-
-
-const geistSans = Geist({
-  variable: '--font-geist-sans',
-  subsets: ['latin'],
-});
-
-const geistMono = Geist_Mono({
-  variable: '--font-geist-mono',
-  subsets: ['latin'],
-});
+import { ChatbotPopup } from '@/components/chatbot-popup'; // Import ChatbotPopup
 
 export const metadata: Metadata = {
-  title: 'منحلة الرحيق',
-  description: 'Boutique en ligne de miel et produits dérivés',
+  title: {
+    default: 'مناحل الرحيق - متجر العسل الطبيعي ومنتجاته',
+    template: '%s | مناحل الرحيق'
+  },
+  description: 'متجر متخصص في بيع العسل الطبيعي ومنتجاته مثل حبوب اللقاح، البروبوليس، شمع العسل والعسل الملكي',
+  keywords: ['عسل', 'مناحل', 'منتجات نحل', 'عسل طبيعي', 'حبوب لقاح', 'بروبوليس'],
   icons: {
-    icon: '/icon.png',
+    icon: '/favicon.ico',
+    apple: '/apple-icon.png',
+  },
+  openGraph: {
+    type: 'website',
+    locale: 'ar_AR',
+    url: 'https://nectar-hives.com',
+    siteName: 'مناحل الرحيق',
   },
 };
 
@@ -41,12 +31,15 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ar" dir="rtl">
-      <body className={`${amiri.variable} ${geistSans.variable} ${geistMono.variable} antialiased`}>
+      <body className="min-h-screen bg-honey-light text-foreground antialiased">
         <SidebarProvider>
           <div className="flex flex-col min-h-screen">
             <SiteHeader />
-            <main className="flex-1">{children}</main>
+            <main className="flex-1 container mx-auto px-4 py-8">
+              {children}
+            </main>
             {/* Footer component will go here */}
+            <ChatbotPopup /> {/* Add ChatbotPopup component */}
           </div>
         </SidebarProvider>
         <Toaster />

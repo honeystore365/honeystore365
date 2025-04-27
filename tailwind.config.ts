@@ -12,6 +12,11 @@ export default {
   		colors: {
   			background: 'hsl(var(--background))',
   			foreground: 'hsl(var(--foreground))',
+  			honey: {
+  				DEFAULT: '#FFC850',
+  				light: '#F5F5F5',
+  				dark: '#E6B800'
+  			},
   			card: {
   				DEFAULT: 'hsl(var(--card))',
   				foreground: 'hsl(var(--card-foreground))'
@@ -87,6 +92,9 @@ export default {
   		animation: {
   			'accordion-down': 'accordion-down 0.2s ease-out',
   			'accordion-up': 'accordion-up 0.2s ease-out'
+  		},
+  		backgroundImage: {
+  			'honeycomb': "url(\"data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 0h50v50H0V0zm0 50h50v50H0V50zm50 0h50v50H50V50zm50 0h50v50H100V50z' fill='%23FFC850' fill-opacity='0.05' fill-rule='evenodd'/%3E%3C/svg%3E\")"
   		}
   	}
   },
