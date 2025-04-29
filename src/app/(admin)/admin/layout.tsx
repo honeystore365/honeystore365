@@ -1,30 +1,21 @@
-import Sidebar from './Sidebar';
+import { Sidebar } from "@/components/ui/sidebar"
+import { SiteHeader } from "@/components/site-header"
 
 export default function AdminLayout({
   children,
 }: {
-  children: React.ReactNode;
+  children: React.ReactNode
 }) {
+
   return (
-    <div className="flex">
+    <div className="flex h-screen">
       <Sidebar />
-      <div className="flex-1 p-4">
-        {children}
+      <div className="flex-1 flex flex-col">
+        <SiteHeader />
+        <main className="flex-1 p-4">
+          {children}
+        </main>
       </div>
     </div>
-  );
+  )
 }
-
-const Sidebar = () => {
-  return (
-    <div className="w-64 bg-gray-100 p-4">
-      <h2 className="text-xl font-semibold mb-4">Admin Menu</h2>
-      <ul>
-        <li><a href="/admin">Dashboard</a></li>
-        <li><a href="/admin/customers">Customers</a></li>
-        <li><a href="/admin/categories">Categories</a></li>
-        <li><a href="/admin/products">Products</a></li>
-      </ul>
-    </div>
-  );
-};
