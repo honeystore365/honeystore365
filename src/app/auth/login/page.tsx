@@ -27,7 +27,19 @@ export default function LoginPage() {
         console.error('Error getting user:', authError);
         return;
       }
-      router.push('/');
+      // Vérification du rôle admin
+      const user = authData?.user;
+      const userRole =
+        user?.user_metadata?.role ||
+        user?.user_metadata?.["role"] ||
+        user?.role ||
+        user?.app_metadata?.role ||
+        user?.app_metadata?.["role"];
+      if (userRole === 'admin') {
+        router.push('/admin');
+      } else {
+        router.push('/');
+      }
     }
   };
 

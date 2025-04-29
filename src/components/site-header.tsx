@@ -9,7 +9,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react'; // Assurez-vous que cn est importé
 
 // --- Constants ---
-const LOGO_URL = "https://via.placeholder.com/60x60.png?text=Logo"; // TODO: Remplacer par le vrai logo
+const LOGO_URL = "/favicon.png"; // Utilise le vrai logo du dossier public
 const LOGO_ALT = "مناحل الرحيق Logo";
 const COMPANY_NAME = "مناحل الرحيق";
 

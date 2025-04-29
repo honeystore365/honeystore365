@@ -1,0 +1,17 @@
+// Ce fichier a été déplacé dans src/app/admin/Sidebar.tsx
+
+const Sidebar = () => {
+  return (
+    <div className="w-64 bg-gray-100 p-4">
+      <h2 className="text-xl font-semibold mb-4">Admin Menu</h2>
+      <ul>
+        <li><a href="/admin">Dashboard</a></li>
+        <li><a href="/admin/customers">Customers</a></li>
+        <li><a href="/admin/categories">Categories</a></li>
+        <li><a href="/admin/products">Products</a></li>
+      </ul>
+    </div>
+  );
+};
+
+export default Sidebar;
