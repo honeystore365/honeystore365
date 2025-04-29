@@ -42,10 +42,18 @@ export async function middleware(request: NextRequest) {
   const { data: { session } } = await supabase.auth.getSession();
   const user = session?.user;
 
+  // Récupération robuste du rôle
+  const userRole =
+    user?.user_metadata?.role ||
+    user?.user_metadata?.["role"] ||
+    user?.role ||
+    user?.app_metadata?.role ||
+    user?.app_metadata?.["role"];
+
   // Si l'utilisateur essaie d'accéder à une page admin
   if (request.nextUrl.pathname.startsWith('/admin')) {
     // S'il n'est pas connecté OU n'a pas le rôle admin
-    if (!user || user.user_metadata?.role !== 'admin') {
+    if (!user || userRole !== 'admin') {
       // Rediriger vers la page de connexion (ou une page d'accueil/erreur)
       return NextResponse.redirect(new URL('/login', request.url)); // Adaptez '/login' si nécessaire
     }
@@ -55,7 +63,6 @@ export async function middleware(request: NextRequest) {
   if (user && (request.nextUrl.pathname.startsWith('/login') || request.nextUrl.pathname.startsWith('/signup'))) {
      return NextResponse.redirect(new URL('/', request.url)); // Rediriger vers la page d'accueil par exemple
   }
-
 
   return response;
 }

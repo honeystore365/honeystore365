@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import { Sidebar } from "@/components/ui/sidebar"
 import { SiteHeader } from "@/components/site-header"
 
@@ -19,3 +20,5 @@ export default function AdminLayout({
     </div>
   )
 }
+=======
+>>>>>>> 2a562a4f2045fa117c49bb1a553cc5d615bd8e29

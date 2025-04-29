@@ -13,7 +13,7 @@ export const metadata: Metadata = {
   description: 'متجر متخصص في بيع العسل الطبيعي ومنتجاته مثل حبوب اللقاح، البروبوليس، شمع العسل والعسل الملكي',
   keywords: ['عسل', 'مناحل', 'منتجات نحل', 'عسل طبيعي', 'حبوب لقاح', 'بروبوليس'],
   icons: {
-    icon: 'public/favicon.png',
+    icon: '/favicon.png',
     apple: '/apple-icon.png',
   },
   openGraph: {
