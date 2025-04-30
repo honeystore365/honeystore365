@@ -4,6 +4,8 @@ import {SidebarProvider} from '@/components/ui/sidebar';
 import {SiteHeader} from '@/components/site-header';
 import {Toaster} from '@/components/ui/toaster';
 import { ChatbotPopup } from '@/components/chatbot-popup'; // Import ChatbotPopup
+import { DebugSession } from '@/components/debug-session'; // Import DebugSession
+import { DebugCookies } from '@/components/debug-cookies'; // Import DebugCookies
 
 export const metadata: Metadata = {
   title: {
@@ -32,6 +34,8 @@ export default function RootLayout({
   return (
     <html lang="ar" dir="rtl">
       <body className="min-h-screen bg-honey-light text-foreground antialiased">
+        <DebugSession /> {/* Add DebugSession component */}
+        <DebugCookies /> {/* Add DebugCookies component */}
         <SidebarProvider>
           <div className="flex flex-col min-h-screen">
             <SiteHeader />
