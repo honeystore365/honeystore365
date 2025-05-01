@@ -1,4 +1,3 @@
-
 "use client";
 
 import Image from 'next/image';
@@ -19,7 +18,7 @@ export default function Home() {
       >
         <div className="absolute inset-0 bg-honey/30 z-10" />
         <Image
-          src="https://via.placeholder.com/1200x400.png?text=Hero+Background" // Placeholder
+          src="/images/hero-background.png" // Local image
           alt="Welcome to Nectar Hives"
           width={1200}
           height={400}
@@ -69,7 +68,7 @@ export default function Home() {
           >
             <div className="relative h-48 bg-honey-light/20">
               <Image
-                src="https://via.placeholder.com/400x300.png?text=Sidr+Honey" // Placeholder
+                src="/images/sidr-honey.png" // Local image
                 alt="عسل السدر"
                 fill
                 className="object-cover"
@@ -170,7 +169,7 @@ export default function Home() {
               viewport={{ once: true }}
             >
               <Image
-                src="https://via.placeholder.com/600x400.png?text=About+Honey" // Placeholder
+                src="/images/about-honey.png" // Local image
                 alt="مناحل الرحيق"
                 width={600}
                 height={400}
