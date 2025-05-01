@@ -52,16 +52,28 @@ export async function middleware(request: NextRequest) {
 
   // Si l'utilisateur essaie d'accéder à une page admin
   if (request.nextUrl.pathname.startsWith('/admin')) {
+    console.log('Middleware: Accessing /admin path');
+    console.log('Middleware: User object:', user);
+    console.log('Middleware: Extracted user role:', userRole);
     // S'il n'est pas connecté OU n'a pas le rôle admin
     if (!user || userRole !== 'admin') {
+      console.log('Middleware: Admin access denied, redirecting to /auth/login');
       // Rediriger vers la page de connexion (ou une page d'accueil/erreur)
-      return NextResponse.redirect(new URL('/login', request.url)); // Adaptez '/login' si nécessaire
+      return NextResponse.redirect(new URL('/auth/login', request.url)); // Redirige vers la page de connexion correcte
     }
+     console.log('Middleware: Admin access granted');
   }
 
   // Si l'utilisateur connecté essaie d'accéder aux pages de connexion/inscription
-  if (user && (request.nextUrl.pathname.startsWith('/login') || request.nextUrl.pathname.startsWith('/signup'))) {
+  if (user && (request.nextUrl.pathname.startsWith('/auth/login') || request.nextUrl.pathname.startsWith('/auth/register'))) {
+     console.log('Middleware: Logged in user accessing auth pages, redirecting to /');
      return NextResponse.redirect(new URL('/', request.url)); // Rediriger vers la page d'accueil par exemple
+  }
+
+  // Redirection après connexion depuis la page d'accueil
+  if (request.nextUrl.pathname === '/' && userRole === 'admin') {
+      console.log('Middleware: Admin user accessing /, redirecting to /admin');
+      return NextResponse.redirect(new URL('/admin', request.url));
   }
 
   return response;
@@ -73,13 +85,14 @@ export const config = {
      * Match all request paths except for the ones starting with:
      * - _next/static (static files)
      * - _next/image (image optimization files)
+     * - _next/webpack-hmr (WebSocket HMR)
      * - favicon.ico (favicon file)
-     * Feel free to modify this pattern to include more exceptions.
      */
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
-     // Ajoutez ici explicitement les chemins à protéger ou à vérifier
-     '/admin/:path*', // Protège toutes les routes sous /admin
-     '/login',       // Pour la redirection des utilisateurs connectés
-     '/signup',      // Pour la redirection des utilisateurs connectés
+    '/((?!_next/static|_next/image|_next/webpack-hmr|favicon.ico|.*\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    // Protected paths
+    '/admin/:path*',
+    '/auth/login',
+    '/auth/register',
+    '/', // Also match the root path for redirection after login
   ],
 };
