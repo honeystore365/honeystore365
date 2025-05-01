@@ -22,22 +22,33 @@ export default function LoginPage() {
     if (signInError) {
       setError(signInError.message);
     } else {
+      // Attendre un court instant pour s'assurer que la session est propagée
+      await new Promise(resolve => setTimeout(resolve, 100)); // Attente de 100ms
+
       const { data: authData, error: authError } = await supabase.auth.getUser();
       if (authError) {
-        console.error('Error getting user:', authError);
+        console.error('Login Page: Error getting user after sign in:', authError);
+        setError('Failed to retrieve user data after login.'); // Informer l'utilisateur
         return;
       }
       // Vérification du rôle admin
       const user = authData?.user;
+      console.log('Login Page: User object after sign in:', user); // Log de l'objet utilisateur complet
+
       const userRole =
         user?.user_metadata?.role ||
         user?.user_metadata?.["role"] ||
-        user?.role ||
+        // user?.role || // Le rôle direct sur l'objet user est moins courant pour les métadonnées personnalisées
         user?.app_metadata?.role ||
         user?.app_metadata?.["role"];
+
+      console.log('Login Page: Extracted user role:', userRole); // Log du rôle extrait
+
       if (userRole === 'admin') {
+        console.log('Login Page: Admin detected, redirecting to /admin');
         router.push('/admin');
       } else {
+        console.log('Login Page: Non-admin user detected, redirecting to /');
         router.push('/');
       }
     }

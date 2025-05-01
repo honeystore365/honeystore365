@@ -77,13 +77,28 @@ export default function ProfilePage() {
     // Fetch customer data
     const { data: customerData, error: customerError } = await supabase
       .from('customers')
-      .select('*')
+      .select('id, first_name, last_name, email, created_at') // Specify columns to avoid issues with extra columns
       .eq('id', user.id)
       .single<Customer>();
 
     if (customerError) {
       console.error('Error fetching customer data:', customerError);
       setError(customerError.message);
+       // If no customer exists, create one
+       if (customerError.message.includes('JSON object requested, multiple (or no) rows returned')) {
+         const { data: newCustomerData, error: newCustomerError } = await supabase
+           .from('customers')
+           .insert([{ id: user.id, email: user.email, first_name: '', last_name: '' }]) // Include email from auth user
+           .select('id, first_name, last_name, email, created_at')
+           .single<Customer>();
+
+         if (newCustomerError) {
+           console.error('Error creating customer:', newCustomerError);
+           setError(newCustomerError.message);
+         } else {
+           setCustomer(newCustomerData);
+         }
+       }
     } else {
       setCustomer(customerData);
     }
