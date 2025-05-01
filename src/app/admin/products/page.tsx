@@ -1,3 +1,4 @@
+'use client';
 // Ce fichier a été déplacé dans src/app/admin/products/page.tsx
 
 import { supabase } from '@/lib/supabaseClient';
@@ -40,11 +41,9 @@ export default async function ProductsPage() {
   }
 
   return (
-    <AdminLayout>
-      <div className="container mx-auto py-10">
-        <h1 className="text-2xl font-semibold mb-4">Products</h1>
-        <DataTable columns={productColumns} data={products as Product[]} />
-      </div>
-    </AdminLayout>
+    <div className="container mx-auto py-10">
+      <h1 className="text-2xl font-semibold mb-4">Products</h1>
+      <DataTable columns={productColumns} data={products as Product[]} />
+    </div>
   );
 }

@@ -90,15 +90,15 @@ function RecentOrdersTable({ orders }: { orders: Order[] }) {
 
 // --- Page Principale du Dashboard ---
 export default async function AdminPage() {
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
   const supabase = createServerClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {  cookies: {
-      get: (name: string) => cookieStore.get(name)?.value,
-      set: () => {},    // Pas besoin de set/remove côté serveur pour SSR simple
-      remove: () => {},
-    } }
+    get: (name: string) => cookieStore.get(name)?.value,
+    set: () => {},    // Pas besoin de set/remove côté serveur pour SSR simple
+    remove: () => {},
+  } }
   );
 
 
@@ -143,15 +143,15 @@ export default async function AdminPage() {
     // Le layout AdminLayout est appliqué automatiquement
     <div>
       <h1 className="text-3xl font-bold mb-8 text-gray-900">
-        Admin Dashboard
+        لوحة تحكم المشرف
       </h1>
 
       {/* Grille pour les cartes statistiques */}
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard title="Total Customers" value={customerCount ?? 'N/A'} icon={Users} />
-        <StatCard title="Total Products" value={productCount ?? 'N/A'} icon={Package} />
-        <StatCard title="Total Categories" value={categoryCount ?? 'N/A'} icon={Tags} />
-        <StatCard title="Total Orders" value={orderCount ?? 'N/A'} icon={ShoppingCart} />
+        <StatCard title="إجمالي العملاء" value={customerCount ?? 'N/A'} icon={Users} />
+        <StatCard title="إجمالي المنتجات" value={productCount ?? 'N/A'} icon={Package} />
+        <StatCard title="إجمالي الفئات" value={categoryCount ?? 'N/A'} icon={Tags} />
+        <StatCard title="إجمالي الطلبات" value={orderCount ?? 'N/A'} icon={ShoppingCart} />
         {/* Ajoutez d'autres cartes si nécessaire (ex: Revenu Total) */}
         {/* <StatCard title="Total Revenue" value="$12,345" icon={DollarSign} /> */}
       </div>

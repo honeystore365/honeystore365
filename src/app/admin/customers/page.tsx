@@ -1,3 +1,6 @@
+'use client';
+
+import React from 'react'; // Added explicit React import
 // Ce fichier a été déplacé dans src/app/admin/customers/page.tsx
 
 import { supabase } from '@/lib/supabaseClient';
@@ -39,11 +42,9 @@ export default async function CustomersPage() {
   }
 
   return (
-    <AdminLayout>
-      <div className="container mx-auto py-10">
-        <h1 className="text-2xl font-semibold mb-4">Customers</h1>
-        <DataTable columns={customerColumns} data={customers as Customer[]} />
-      </div>
-    </AdminLayout>
+    <div className="container mx-auto py-10">
+      <h1 className="text-2xl font-semibold mb-4">Customers</h1>
+      <DataTable columns={customerColumns} data={customers as Customer[]} />
+    </div>
   );
 }

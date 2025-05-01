@@ -17,11 +17,11 @@ import {
 
 // Structure des liens pour faciliter la maintenance
 const menuItems = [
-  { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/admin/customers', label: 'Customers', icon: Users }, // Ajustez le href si différent
-  { href: '/admin/categories', label: 'Categories', icon: Tags },
-  { href: '/admin/products', label: 'Products', icon: Package },
-  { href: '/admin/orders', label: 'Orders', icon: ShoppingCart }, // Ajout d'un lien pour les commandes
+  { href: '/admin', label: 'لوحة التحكم', icon: LayoutDashboard },
+  { href: '/admin/customers', label: 'العملاء', icon: Users },
+  { href: '/admin/categories', label: 'الفئات', icon: Tags },
+  { href: '/admin/products', label: 'المنتجات', icon: Package },
+  { href: '/admin/orders', label: 'الطلبات', icon: ShoppingCart },
 ];
 
 const Sidebar = () => {
@@ -32,7 +32,7 @@ const Sidebar = () => {
     <aside className="w-64 bg-gray-800 text-gray-100 p-4 flex flex-col flex-shrink-0">
       <div className="mb-8 text-center">
          {/* Optionnel: Ajouter un logo ou titre plus stylisé */}
-         <Link href="/admin" className="text-2xl font-semibold text-white">Admin Panel</Link>
+         <Link href="/admin" className="text-2xl font-semibold text-white">لوحة تحكم المشرف</Link>
       </div>
       <nav className="flex-grow"> {/* flex-grow pour pousser les éventuels éléments du bas */}
         <ul>
