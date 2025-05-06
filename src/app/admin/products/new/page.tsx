@@ -1,10 +1,11 @@
 'use client';
 
-import { useState } from 'react';
-import { supabase } from '@/lib/supabaseClient';
+import { useState, useEffect } from 'react';
+import { createClientComponent } from '@/lib/supabaseClient'; // Import createClientComponent
 import { CustomForm } from '@/components/form';
 import { useRouter } from 'next/navigation';
 import * as z from "zod"
+import { FieldPath } from 'react-hook-form'; // Import FieldPath
 
 const productSchema = z.object({
   name: z.string().min(2, {
@@ -18,45 +19,131 @@ const productSchema = z.object({
     message: "Le stock doit être supérieur à 0.",
   }),
   image_url: z.string().optional(),
+  categoryIds: z.array(z.string()).optional(), // Add categoryIds to schema
 })
 
 export default function NewProductPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [categories, setCategories] = useState<{ id: string; name: string; }[]>([]); // State for categories
+  const [loadingCategories, setLoadingCategories] = useState(true); // State for category loading
+  const [categoryError, setCategoryError] = useState<string | null>(null); // State for category fetching error
+
+  // Fetch categories on component mount
+  useEffect(() => {
+    const fetchCategories = async () => {
+      setLoadingCategories(true);
+      const supabaseClient = createClientComponent(); // Use client component
+      const { data, error } = await supabaseClient
+        .from('categories')
+        .select('id, name') // Select only id and name
+        .order('name', { ascending: true });
+
+      if (error) {
+        console.error('Error fetching categories:', error);
+        setCategoryError(error.message);
+        setCategories([]);
+      } else {
+        setCategories(data || []);
+        setCategoryError(null);
+      }
+      setLoadingCategories(false);
+    };
+
+    fetchCategories();
+  }, []); // Empty dependency array means this runs once on mount
 
   const handleSubmit = async (values: z.infer<typeof productSchema>) => {
     setLoading(true);
     setError('');
 
-    const { data, error } = await supabase
-      .from('products')
-      .insert([values]);
+    const supabase = createClientComponent(); // Create Supabase client instance
 
-    if (error) {
-      console.error('Error creating product:', error);
-      setError(error.message);
-    } else {
-      router.push('/(admin)/admin/products');
+    const { categoryIds, ...productValues } = values; // Extract categoryIds
+
+    // Explicitly convert price and stock to numbers
+    const productValuesWithNumbers = {
+      ...productValues,
+      price: Number(productValues.price),
+      stock: Number(productValues.stock),
+    };
+
+    const { data: productData, error: productError } = await supabase
+      .from('products')
+      .insert([productValues]) // Insert product without categoryIds
+      .select(); // Select the inserted product to get its ID
+
+    if (productError) {
+      console.error('Error creating product:', productError);
+      setError(productError.message);
+      setLoading(false);
+      return; // Stop if product creation fails
+    }
+
+    const newProductId = productData?.[0]?.id;
+
+    if (categoryIds && categoryIds.length > 0 && newProductId) {
+      const productCategoriesToInsert = categoryIds.map(categoryId => ({
+        product_id: newProductId,
+        category_id: categoryId,
+      }));
+
+      const { error: productCategoryError } = await supabase
+        .from('product_categories')
+        .insert(productCategoriesToInsert);
+
+      if (productCategoryError) {
+        console.error('Error linking product to categories:', productCategoryError);
+        // Decide how to handle this error - maybe delete the product?
+        // For now, we'll just log it and proceed.
+        setError('Product created, but failed to link to categories: ' + productCategoryError.message);
+      }
+    }
+
+    if (!productError && !error) { // Only redirect if both product and category linking were successful or categoryIds was empty
+      router.push('/admin/products'); // Redirect to products list
     }
 
     setLoading(false);
   };
 
-  const fields = [
-    { name: 'name', label: 'Nom', description: 'Nom du produit' },
-    { name: 'description', label: 'Description', description: 'Description du produit', type: 'textarea' },
-    { name: 'price', label: 'Prix', description: 'Prix du produit', type: 'number' },
-    { name: 'stock', label: 'Stock', description: 'Stock du produit', type: 'number' },
-    { name: 'image_url', label: 'Image URL', description: 'URL de l\'image du produit' },
+  const fields: { // Explicitly type the fields array
+    name: FieldPath<z.infer<typeof productSchema>>;
+    label: string;
+    description?: string;
+    type?: string;
+  }[] = [
+    { name: 'name', label: 'الاسم', description: 'اسم المنتج' }, // Updated to Arabic
+    { name: 'description', label: 'الوصف', description: 'وصف المنتج', type: 'textarea' }, // Updated to Arabic
+    { name: 'price', label: 'السعر', description: 'سعر المنتج', type: 'number' }, // Updated to Arabic
+    { name: 'stock', label: 'المخزون', description: 'كمية المخزون', type: 'number' }, // Updated to Arabic
+    { name: 'image_url', label: 'رابط الصورة', description: 'رابط صورة المنتج', type: 'text' }, // Updated to Arabic, changed type to text as it's a URL
+    { // Add category selection field
+      name: 'categoryIds',
+      label: 'الفئات', // Updated to Arabic
+      description: 'اختر الفئات لهذا المنتج', // Updated to Arabic
+      type: 'category-select',
+    },
   ];
 
   return (
     <div className="container mx-auto py-10">
-      <h1 className="text-3xl font-bold mb-8">Ajouter un produit</h1>
+      <h1 className="text-3xl font-bold mb-8">إضافة منتج جديد</h1> {/* Updated heading to Arabic */}
       {error && <p className="text-red-500">{error}</p>}
-      <CustomForm schema={productSchema} onSubmit={handleSubmit} fields={fields} />
-      {loading && <div>Chargement...</div>}
+      {loadingCategories ? (
+        <div>جاري تحميل الفئات...</div> /* Updated loading message to Arabic */
+      ) : categoryError ? (
+        <div className="text-red-500">خطأ في تحميل الفئات: {categoryError}</div> /* Updated error message to Arabic */
+      ) : (
+        <CustomForm
+          schema={productSchema}
+          onSubmit={handleSubmit}
+          fields={fields}
+          categories={categories} // Pass categories to CustomForm
+        />
+      )}
+      {loading && <div>جاري الإضافة...</div>} {/* Updated loading message to Arabic */}
     </div>
   );
 }
