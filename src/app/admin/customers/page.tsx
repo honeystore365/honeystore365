@@ -3,8 +3,10 @@
 import React from 'react'; // Added explicit React import
 // Ce fichier a été déplacé dans src/app/admin/customers/page.tsx
 
-import { supabase } from '@/lib/supabaseClient';
+import { createClientComponent } from '@/lib/supabaseClient';
 import { DataTable } from '@/components/data-table';
+
+const supabase = createClientComponent();
 
 interface Customer {
   id: string;

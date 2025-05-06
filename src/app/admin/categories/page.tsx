@@ -4,7 +4,7 @@
 import { useState, useEffect, useRef } from 'react';
 // Assurez-vous que '@/lib/supabaseClient' initialise un client Supabase
 // adapté à l'utilisation côté client dans un composant 'use client'.
-import { supabase } from '@/lib/supabaseClient';
+import { createClientComponent } from '@/lib/supabaseClient';
 import { DataTable } from '@/components/data-table'; // Assurez-vous que ce composant existe
 // import AdminLayout from '../layout'; // Commenté si le layout est géré au niveau du dossier
 import { Button } from '@/components/ui/button'; // Assurez-vous que ce composant existe
@@ -61,19 +61,18 @@ export default function CategoriesPage() {
   // Fonction pour récupérer les catégories
   const fetchCategories = async () => {
     setLoading(true);
-    // Vérifiez si supabase est correctement initialisé pour le client ici si nécessaire
-    if (!supabase) {
-      setError("Supabase client not initialized.");
-      setLoading(false);
-      return;
-    }
-    const { data, error } = await supabase
-      .from('categories')
-      .select('*')
-      .order('created_at', { ascending: false }); // Optionnel: trier par date de création
+// Vérifiez si supabase est correctement initialisé pour le client ici si nécessaire
+const supabase = createClientComponent();
+const { data, error } = await supabase
+.from('categories')
+.select('*')
+.order('created_at', { ascending: false }); // Optionnel: trier par date de création
 
-    if (error) {
-      console.error('Error fetching categories:', error);
+console.log('Fetch categories result - data:', data);
+console.log('Fetch categories result - error:', error);
+
+if (error) {
+console.error('Error fetching categories:', error);
       setError(error.message);
       setCategories([]);
     } else {
@@ -190,11 +189,9 @@ export default function CategoriesPage() {
               </div>
             </div>
             <DialogFooter>
-              <DialogClose asChild>
-<Button type="button" variant="outline" disabled={isSubmitting}> {/* Désactiver pendant la soumission */}
-<span>إلغاء</span> {/* Wrapped text in span */}
+<Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)} disabled={isSubmitting}> {/* Désactiver pendant la soumission */}
+إلغاء
 </Button>
-              </DialogClose>
               <Button type="submit" disabled={isSubmitting}>
                 {isSubmitting ? 'جاري الإضافة...' : 'إضافة الفئة'}
               </Button>

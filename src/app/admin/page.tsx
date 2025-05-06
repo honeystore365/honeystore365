@@ -1,6 +1,6 @@
 // src/app/admin/page.tsx
 import { cookies } from 'next/headers';
-import { createServerClient } from '@supabase/ssr';
+import { createClientServer } from '@/lib/supabaseClientServer';
 import { Database } from '@/types/supabase'; // Adjusted to use absolute path alias
 
 // --- Icônes pour les cartes (optionnel, exemple avec lucide-react) ---
@@ -90,16 +90,7 @@ function RecentOrdersTable({ orders }: { orders: Order[] }) {
 
 // --- Page Principale du Dashboard ---
 export default async function AdminPage() {
-  const cookieStore = await cookies();
-  const supabase = createServerClient<Database>(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {  cookies: {
-    get: (name: string) => cookieStore.get(name)?.value,
-    set: () => {},    // Pas besoin de set/remove côté serveur pour SSR simple
-    remove: () => {},
-  } }
-  );
+  const supabase = await createClientServer();
 
 
   // --- Récupération des données ---
@@ -123,7 +114,8 @@ export default async function AdminPage() {
 
   // Nombre de Clients (Utilisateurs authentifiés)
   // Pour Supabase Auth, c'est un peu différent
-  const { data: usersData, error: usersError } = await supabase.auth.admin.listUsers();
+  const supabaseAdmin = await createClientServer('service_role');
+  const { data: usersData, error: usersError } = await supabaseAdmin.auth.admin.listUsers();
   const customerCount = usersData?.users?.length ?? 0; // Nombre total d'utilisateurs
 
    // Commandes Récentes (Exemple: 5 dernières)
@@ -136,6 +128,9 @@ export default async function AdminPage() {
   // Gestion basique des erreurs (vous pouvez améliorer ceci)
   if (productError || categoryError || orderError || usersError || recentOrdersError) {
       console.error("Error fetching dashboard data:", { productError, categoryError, orderError, usersError, recentOrdersError });
+      if (recentOrdersError) {
+          console.error("Details of recentOrdersError:", recentOrdersError);
+      }
       // Afficher un message d'erreur à l'utilisateur pourrait être utile ici
   }
 

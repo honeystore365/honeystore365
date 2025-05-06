@@ -4,7 +4,7 @@ import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { cn } from '@/lib/utils';
-import { supabase } from '@/lib/supabaseClient'; // Assurez-vous que c'est bien createBrowserClient
+import { createClientComponent } from '@/lib/supabaseClient';
 import { useRouter } from 'next/navigation'; // usePathname retiré car non utilisé après modifs
 import { useEffect, useState } from 'react';
 import type { Session } from '@supabase/supabase-js'; // Import du type Session
@@ -41,13 +41,14 @@ export function SiteHeader() {
 
   useEffect(() => {
     // 1. Obtenir la session initiale
+    const supabase = createClientComponent();
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setLoading(false); // Fin du chargement initial
     });
 
     // 2. Écouter les changements d'état d'authentification
-    const { data: authListener } = supabase.auth.onAuthStateChange(
+    const { data: authListener } = createClientComponent().auth.onAuthStateChange(
       (_event, session) => {
         console.log("Auth state changed:", _event, session); // Pour le débogage
         setSession(session);
@@ -70,6 +71,7 @@ export function SiteHeader() {
   }, [router]); // Ajouter router aux dépendances si utilisé dans l'effet
 
   const handleSignOut = async () => {
+    const supabase = createClientComponent();
     await supabase.auth.signOut();
     // La redirection est maintenant gérée par onAuthStateChange ou peut être faite explicitement ici si préféré :
     router.push('/'); // Rediriger vers l'accueil après déconnexion

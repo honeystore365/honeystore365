@@ -1,0 +1,26 @@
+{
+  "mcpServers": {
+    "supabase": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@supabase/mcp-server-supabase@latest",
+        "--access-token",
+        "sbp_e387044bf443f441689ddbf7ef91ab972eb57855"
+      ]
+    },
+    "context7": {
+      "command": "npx",
+      "args": ["-y", "@upstash/context7-mcp@latest"]
+    },
+    "github.com/marcopesani/mcp-server-serper": {
+      "command": "npx",
+      "args": ["-y", "serper-search-scrape-mcp-server"],
+      "env": {
+        "SERPER_API_KEY": "b8518e88dcebde8e8731b9593196549dfed5bad0"
+      },
+      "disabled": false,
+      "autoApprove": ["google_search", "scrape"]
+    }
+  }
+}
