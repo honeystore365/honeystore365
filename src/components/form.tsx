@@ -1,3 +1,5 @@
+'use client'; // Add use client directive
+
 import {
   Form,
   FormControl,
@@ -14,8 +16,11 @@ import { Label } from "@/components/ui/label"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import * as z from "zod"
+// useDropzone is no longer needed here, moved to ImageUploadField
+import React, { useEffect } from 'react'; // Keep React for useEffect, remove useState
 
 import { FieldPath } from 'react-hook-form'; // Import FieldPath
+import { ImageUploadField } from './image-upload-field'; // Import the new component
 
 interface FormProps<T extends z.ZodType<any, any, any>> {
   schema: T;
@@ -26,18 +31,27 @@ interface FormProps<T extends z.ZodType<any, any, any>> {
     description?: string;
     type?: string;
   }[];
-  categories?: { id: string; name: string; }[]; // Add categories prop
+  categories?: { id: string; name: string; }[];
+  defaultValues?: Partial<z.infer<T>>; // Make defaultValues optional
+  submitButtonText?: string;
+  showCancelButton?: boolean;
+  onCancel?: () => void;
 }
 
 export function CustomForm<T extends z.ZodType<any, any, any>>({
   schema,
   onSubmit,
   fields,
-  categories, // Destructure categories prop
+  categories,
+  defaultValues: providedDefaultValues, // Rename prop
+  submitButtonText = "Soumettre", // Default submit text
+  showCancelButton = false,
+  onCancel,
 }: FormProps<T>) {
-  const defaultValues = fields.reduce((acc, field) => {
+  // Use provided default values if available, otherwise generate basic defaults
+  const defaultValues = providedDefaultValues || fields.reduce((acc, field) => {
     if (field.type === 'number') {
-      acc[field.name] = 0; // Default to 0 for number fields
+      acc[field.name] = 0;
     } else if (field.type === 'category-select') {
        acc[field.name] = []; // Default to empty array for category select
     }
@@ -49,9 +63,17 @@ export function CustomForm<T extends z.ZodType<any, any, any>>({
 
   const form = useForm<z.infer<T>>({
     resolver: zodResolver(schema),
-    defaultValues, // Use generated default values
+    defaultValues: defaultValues as any, // Use calculated default values (cast needed if mixing generated and provided)
+                                        // Or better: ensure defaultValues is fully populated before passing
     mode: "onChange",
   })
+
+  // Reset form if defaultValues prop changes (useful for edit forms loading data)
+  useEffect(() => {
+    if (providedDefaultValues) {
+      form.reset(providedDefaultValues);
+    }
+  }, [providedDefaultValues, form.reset]);
 
   function handleSubmit(values: z.infer<T>) {
     onSubmit(values)
@@ -89,20 +111,25 @@ export function CustomForm<T extends z.ZodType<any, any, any>>({
                         </div>
                       ))}
                     </div>
+                  ) : field.type === 'file' ? (
+                    // Render the dedicated ImageUploadField component
+                    <ImageUploadField field={formField} />
                   ) : (
-                    <Input
-                      type={field.type || "text"}
-                      placeholder={field.label}
-                      {...formField}
-                      onChange={(e) => { // Add onChange handler
-                        if (field.type === 'number') {
-                          formField.onChange(Number(e.target.value)); // Parse as number
-                        } else {
-                          formField.onChange(e.target.value); // Otherwise, pass string value
-                        }
-                      }}
-                    />
-                  )}
+                      // Default Input field
+                      <Input
+                        type={field.type || "text"}
+                        placeholder={field.label}
+                        {...formField}
+                        onChange={(e) => {
+                          if (field.type === 'number') {
+                            formField.onChange(Number(e.target.value));
+                          } else {
+                            formField.onChange(e.target.value);
+                          }
+                        }}
+                      />
+                    )
+                  }
                 </FormControl>
                 <FormDescription>
                   {field.description} {/* Use outer field.description */}
@@ -112,7 +139,14 @@ export function CustomForm<T extends z.ZodType<any, any, any>>({
             )}
           />
         ))}
-        <Button type="submit">Soumettre</Button>
+        <div className="flex gap-2 justify-end"> {/* Container for buttons */}
+          {showCancelButton && (
+            <Button type="button" variant="outline" onClick={onCancel}>
+              Annuler {/* Default Cancel text, consider making this a prop too */}
+            </Button>
+          )}
+          <Button type="submit">{submitButtonText}</Button>
+        </div>
       </form>
     </Form>
   )

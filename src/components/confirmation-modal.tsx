@@ -9,6 +9,8 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
+import { Button } from "./ui/button" // Changed to relative path
+import React from "react" // Import React
 
 interface ConfirmationModalProps {
   title: string
@@ -17,6 +19,7 @@ interface ConfirmationModalProps {
   onCancel?: () => void
   confirmText?: string
   cancelText?: string
+  children: React.ReactNode // Add children prop for the trigger
 }
 
 export function ConfirmationModal({
@@ -26,11 +29,12 @@ export function ConfirmationModal({
   onCancel,
   confirmText = "Confirmer",
   cancelText = "Annuler",
+  children, // Destructure children
 }: ConfirmationModalProps) {
   return (
     <AlertDialog>
       <AlertDialogTrigger asChild>
-        <Button variant="destructive">Supprimer</Button>
+        {children}
       </AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogHeader>

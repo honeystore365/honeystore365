@@ -1,13 +1,14 @@
 'use client';
 // Ce fichier a été déplacé dans src/app/admin/products/page.tsx
 
-import { useState, useEffect } from 'react'; // Import useState and useEffect
-import { createClientComponent } from '@/lib/supabaseClient'; // Import createClientComponent
+import { useState, useEffect, useCallback } from 'react';
+import { createClientComponent } from '@/lib/supabaseClient';
 import { DataTable } from '@/components/data-table';
 import Link from 'next/link'; // Import Link
 import { Button } from '@/components/ui/button'; // Import Button
 
 import { Row } from '@tanstack/react-table'; // Import Row type
+import { ConfirmationModal } from '@/components/confirmation-modal'; // Ensure ConfirmationModal is imported at the top
 
 interface Product {
   id: string;
@@ -16,34 +17,52 @@ interface Product {
   price: number;
   stock: number;
   created_at: string;
+  image_url?: string; // Make image_url optional as it might not always be present
 }
 
-// Add state variables for products, loading, and error
-const productColumns = [
-  {
-    accessorKey: 'image_url', // Access the image_url field
+// AdminLayout and ConfirmationModal are imported further down, which is fine.
+
+export default function ProductsPage() {
+  const [products, setProductsInternal] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [refreshKey, setRefreshKey] = useState(0); // Add refreshKey state
+
+  const fetchProducts = useCallback(async () => {
+    setLoading(true);
+    const supabase = createClientComponent();
+    const { data, error: fetchError } = await supabase
+      .from('products')
+      .select('id, name, description, price, stock, created_at, image_url');
+
+    if (fetchError) {
+      console.error('Error fetching products:', fetchError);
+      setError(fetchError.message);
+      setProductsInternal([]); // Use renamed setter
+    } else {
+      setProductsInternal(data || []); // Use renamed setter
+      setError(null);
+    }
+    setLoading(false);
+  }, []); // No dependencies needed if createClientComponent is stable
+
+  useEffect(() => {
+    fetchProducts();
+  }, [fetchProducts, refreshKey]); // Add refreshKey to dependency array
+
+  // Define productColumns inside the component to access fetchProducts
+  const productColumns = [
+    {
+      accessorKey: 'image_url', // Access the image_url field
     header: 'الصورة', // Header in Arabic
     cell: ({ row }: { row: Row<Product> }) => { // Custom cell renderer with type annotation
       const imageUrl = row.getValue('image_url') as string;
-      console.log('Original Image URL:', imageUrl); // Log original URL
-      let displayImageUrl = imageUrl;
+      // console.log('Original Image URL:', imageUrl); // Log original URL
+      // Google Drive transformation removed as it was causing 403 errors.
+      // It's recommended to use direct image links or a proper image hosting service.
+      const displayImageUrl = imageUrl;
 
-      // Check if it's a Google Drive sharable link and transform it
-      if (imageUrl && imageUrl.includes('drive.google.com/file/d/')) {
-        try {
-          const url = new URL(imageUrl);
-          const filePath = url.pathname.split('/');
-          const fileId = filePath[filePath.indexOf('d') + 1];
-          if (fileId) {
-            displayImageUrl = `https://drive.google.com/uc?export=view&id=${fileId}`;
-          }
-        } catch (e) {
-          console.error('Error parsing Google Drive URL:', e);
-          displayImageUrl = imageUrl; // Fallback to original URL if parsing fails
-        }
-      }
-
-      console.log('Transformed Image URL:', displayImageUrl); // Log transformed URL
+      // console.log('Using Image URL:', displayImageUrl);
 
       return displayImageUrl ? (
         <img src={displayImageUrl} alt="Product Image" style={{ width: '50px', height: '50px', objectFit: 'cover' }} /> // Display image with fixed size
@@ -64,56 +83,78 @@ const productColumns = [
     accessorKey: 'stock',
     header: 'المخزون', // Header in Arabic
   },
+  {
+    id: 'actions',
+    cell: ({ row }: { row: Row<Product> }) => {
+      const product = row.original;
+      const [isDeleting, setIsDeleting] = useState(false);
+
+      const handleDelete = async () => {
+        setIsDeleting(true);
+        const supabase = createClientComponent();
+        const { error } = await supabase
+          .from('products')
+          .delete()
+          .eq('id', product.id);
+
+        if (error) {
+          console.error('Error deleting product:', error);
+          setIsDeleting(false);
+          return false;
+        }
+
+        // Refresh the product list by incrementing refreshKey
+        setRefreshKey(oldKey => oldKey + 1);
+        setIsDeleting(false);
+        return true;
+      };
+
+      return (
+        <div className="flex items-center gap-2">
+          <Link href={`/admin/products/${product.id}/edit`}>
+            <Button variant="outline" size="sm">
+              تعديل
+            </Button>
+          </Link>
+          <ConfirmationModal
+            title="حذف المنتج"
+            description="هل أنت متأكد أنك تريد حذف هذا المنتج؟ لا يمكن التراجع عن هذا الإجراء."
+            onConfirm={handleDelete}
+          >
+            <Button variant="destructive" size="sm" disabled={isDeleting}>
+              {isDeleting ? 'جاري الحذف...' : 'حذف'}
+            </Button>
+          </ConfirmationModal>
+        </div>
+      );
+    },
+  },
 ];
 
-import AdminLayout from '../layout';
+// Imports for AdminLayout and ConfirmationModal are already at the top with other imports if not used before this point.
+// If they are used by productColumns, they need to be imported before ProductsPage component.
+// Let's ensure they are at the top.
+// The handleDeleteProduct callback is not used by the columns, so it can be removed or kept for other purposes.
+// For now, let's assume it's not needed by the columns.
 
-export default function ProductsPage() { // Remove async
-  // Data fetching is now handled in useEffect
+  // const handleDeleteProduct = useCallback(async (productId: string) => { ... }, [fetchProducts]); // This was correctly commented out / can be removed
 
-  // Add state variables for products, loading, and error
-  const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  // Fetch products on component mount
-  useEffect(() => {
-    const fetchProducts = async () => {
-      setLoading(true);
-      const supabase = createClientComponent(); // Use createClientComponent
-      const { data, error } = await supabase
-        .from('products')
-        .select('id, name, description, price, stock, created_at, image_url'); // Include image_url
-
-      if (error) {
-        console.error('Error fetching products:', error);
-        setError(error.message);
-        setProducts([]);
-      } else {
-        setProducts(data || []);
-        setError(null);
-      }
-      setLoading(false);
-    };
-
-    fetchProducts();
-  }, []); // Empty dependency array means this runs once on mount
 
   return (
     <div className="container mx-auto py-10">
-      <div className="flex justify-between items-center mb-4" style={{ backgroundColor: 'lightblue', padding: '10px' }}> {/* Add a div for flex layout with debugging styles */}
-        <h1 className="text-2xl font-semibold">المنتجات</h1> {/* Updated heading to Arabic */}
-        <Link href="/admin/products/new"> {/* Link to the new product page */}
-          <Button style={{ backgroundColor: 'salmon', padding: '5px' }}>إضافة منتج جديد</Button> {/* Button text in Arabic, keep debugging styles for now */}
+      <div className="flex justify-between items-center mb-4">
+        <h1 className="text-2xl font-semibold">المنتجات</h1>
+        <Link href="/admin/products/new">
+          <Button>إضافة منتج جديد</Button>
         </Link>
       </div>
-      {loading && <div className="text-center">جاري تحميل المنتجات...</div>} {/* Updated loading message to Arabic */}
-      {error && <div className="text-center text-red-500">خطأ في تحميل المنتجات: {error}</div>} {/* Updated error message to Arabic */}
+      {loading && <div className="text-center">جاري تحميل المنتجات...</div>}
+      {error && <div className="text-center text-red-500">خطأ في تحميل المنتجات: {error}</div>}
       {!loading && !error && products.length > 0 && (
         <DataTable columns={productColumns} data={products} />
       )}
       {!loading && !error && products.length === 0 && (
-        <div className="text-center">لا توجد منتجات حالياً.</div> /* Updated message to Arabic */
+        <div className="text-center">لا توجد منتجات حالياً.</div>
       )}
     </div>
   );

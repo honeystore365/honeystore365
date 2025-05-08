@@ -1,12 +1,20 @@
-'use client';
+import { createClientServer } from '@/lib/supabaseClientServer';
+import { redirect } from 'next/navigation';
+// Image, Button, ShoppingCart will be used in ProductCardClient
+import ProductCardClient from '@/components/ProductCardClient'; // Import the new client component
 
-import { useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabaseClient';
-import { useRouter } from 'next/navigation';
+// Define types (can be moved to a types file or shared)
+interface Product { // This type should be consistent with ProductCardClient
+  id: string;
+  name: string | null;
+  description: string | null;
+  price: number | null;
+  image_url: string | null;
+}
 
 interface Profile {
   id: string;
-  username: string;
+  username: string | null; // Allow null
   avatar_url: string | null;
   website: string | null;
   updated_at: string | null;
@@ -14,226 +22,148 @@ interface Profile {
 
 interface Customer {
   id: string;
-  first_name: string;
-  last_name: string;
-  email: string;
+  first_name: string | null; // Allow null
+  last_name: string | null; // Allow null
+  email: string | null; // Allow null
   created_at: string;
 }
 
-export default function ProfilePage() {
-  const [loading, setLoading] = useState(true);
-  const [profile, setProfile] = useState<Profile | null>(null);
-  const [customer, setCustomer] = useState<Customer | null>(null);
-  const [error, setError] = useState('');
-  const [editing, setEditing] = useState(false);
-  const [username, setUsername] = useState('');
-  const [website, setWebsite] = useState('');
-  const router = useRouter();
+// Placeholder for a client component to handle profile editing if needed later
+// For now, we'll keep profile display simple within the server component.
+// import ProfileEditor from './ProfileEditorClient'; 
 
-  useEffect(() => {
-    fetchProfileAndCustomer();
-  }, []);
+export default async function ProfilePage() {
+  const supabase = await createClientServer();
 
-  const fetchProfileAndCustomer = async () => {
-    setLoading(true);
-    setError('');
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
+  const { data: { user }, error: userError } = await supabase.auth.getUser();
 
-    if (userError || !user) {
-      setError(userError?.message || 'User not authenticated.');
-      router.push('/auth/login');
-      return;
-    }
-
-    // Fetch profile
-    const { data: profileData, error: profileError } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', user.id)
-      .single<Profile>();
-
-    if (profileError) {
-      console.error('Error fetching profile:', profileError);
-      setError(profileError.message);
-      // If no profile exists, create one
-      if (profileError.message.includes('JSON object requested, multiple (or no) rows returned')) {
-        const { data: newProfileData, error: newProfileError } = await supabase
-          .from('profiles')
-          .insert([{ id: user.id, username: 'user-' + user.id }])
-          .select('*')
-          .single<Profile>();
-
-        if (newProfileError) {
-          console.error('Error creating profile:', newProfileError);
-          setError(newProfileError.message);
-        } else {
-          setProfile(newProfileData);
-        }
-      }
-    } else {
-      setProfile(profileData);
-    }
-
-    // Fetch customer data
-    const { data: customerData, error: customerError } = await supabase
-      .from('customers')
-      .select('id, first_name, last_name, email, created_at') // Specify columns to avoid issues with extra columns
-      .eq('id', user.id)
-      .single<Customer>();
-
-    if (customerError) {
-      console.error('Error fetching customer data:', customerError);
-      setError(customerError.message);
-       // If no customer exists, create one
-       if (customerError.message.includes('JSON object requested, multiple (or no) rows returned')) {
-         const { data: newCustomerData, error: newCustomerError } = await supabase
-           .from('customers')
-           .insert([{ id: user.id, email: user.email, first_name: '', last_name: '' }]) // Include email from auth user
-           .select('id, first_name, last_name, email, created_at')
-           .single<Customer>();
-
-         if (newCustomerError) {
-           console.error('Error creating customer:', newCustomerError);
-           setError(newCustomerError.message);
-         } else {
-           setCustomer(newCustomerData);
-         }
-       }
-    } else {
-      setCustomer(customerData);
-    }
-
-    setLoading(false);
+  if (userError || !user) {
+    console.error('ProfilePage: User not authenticated.', userError);
+    redirect('/auth/login?message=Please log in to view your profile.');
   }
 
-  if (loading) {
-    return <div className="container mx-auto py-10 text-center">Loading profile...</div>;
+  // Fetch profile data
+  const { data: profile, error: profileError } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('id', user.id)
+    .single<Profile>();
+
+  // Fetch customer data
+  const { data: customer, error: customerError } = await supabase
+    .from('customers')
+    .select('id, first_name, last_name, email, created_at')
+    .eq('id', user.id)
+    .single<Customer>();
+  
+  // Fetch products
+  const { data: products, error: productsError } = await supabase
+    .from('products')
+    .select('id, name, description, price, image_url');
+
+  if (profileError) {
+    console.error('Error fetching profile data:', profileError.message);
+    // Potentially redirect or show a specific error message for profile
+  }
+  if (customerError) {
+    console.error('Error fetching customer data:', customerError.message);
+    // Potentially redirect or show a specific error message for customer
+  }
+  if (productsError) {
+    console.error('Error fetching products:', productsError);
+    // Optionally, render an error message to the user for products
   }
 
-  if (error) {
-    return <div className="container mx-auto py-10 text-center text-red-500">Error: {error}</div>;
+  // Basic loading/error state for critical data
+  if (!user) {
+    return <div className="container mx-auto py-10 text-center">Authenticating...</div>;
   }
+  // If profile or customer doesn't exist, it might be an issue or first-time setup.
+  // For now, we'll proceed, but in a real app, you might want to guide the user.
 
-  if (!profile || !customer) {
-     return <div className="container mx-auto py-10 text-center text-gray-600">Could not load profile data.</div>;
-  }
-
- const updateProfile = async () => {
-   setLoading(true);
-   setError('');
-
-   const { error: updateError } = await supabase
-     .from('profiles')
-     .update({ username, website })
-     .eq('id', profile?.id);
-
-   if (updateError) {
-     console.error('Error updating profile:', updateError);
-     setError(updateError.message);
-   } else {
-     // Refresh profile data
-     fetchProfileAndCustomer();
-     setEditing(false);
-   }
-
-   setLoading(false);
- };
-
- return (
-   <div className="container mx-auto py-10">
-     <h1 className="text-3xl font-bold mb-8 text-center">
-       حسابي
+  return (
+    <div className="container mx-auto py-10">
+      <h1 className="text-3xl font-bold mb-8 text-center">
+        حسابي وصفحة المنتجات
       </h1>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        {/* Order History */}
-        <div>
-          <h2 className="text-2xl font-semibold mb-4">
-            سجل الطلبات
-          </h2>
-          <div className="flex flex-col gap-4">
-            {/* Order history will be fetched and displayed here */}
-            <div className="border rounded-xl p-4 shadow-sm">
-               <p className="text-gray-600">Order history coming soon...</p>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Profile and Orders Section (Left/Top on mobile) */}
+        <div className="lg:col-span-1 space-y-8">
+          <div>
+            <h2 className="text-2xl font-semibold mb-4">
+              معلومات الملف الشخصي
+            </h2>
+            <div className="bg-white shadow-md rounded-xl p-6 space-y-3">
+              <p><strong>اسم المستخدم:</strong> {profile?.username || 'غير متوفر'}</p>
+              <p><strong>الموقع الإلكتروني:</strong> {profile?.website || 'غير متوفر'}</p>
+              <p><strong>الاسم الأول:</strong> {customer?.first_name || 'غير متوفر'}</p>
+              <p><strong>الاسم الأخير:</strong> {customer?.last_name || 'غير متوفر'}</p>
+              <p><strong>البريد الإلكتروني:</strong> {customer?.email || user.email}</p>
+              {/* Add Edit Profile Button here if needed, linking to a separate edit page or modal */}
+              {/* 
+                <Button asChild className="mt-4 w-full">
+                  <Link href="/profile/edit">تعديل الملف الشخصي</Link>
+                </Button> 
+              */}
+            </div>
+          </div>
+
+          <div>
+            <h2 className="text-2xl font-semibold mb-4">
+              سجل الطلبات
+            </h2>
+            <div className="bg-white shadow-md rounded-xl p-6">
+              <p className="text-gray-600">سجل الطلبات سيظهر هنا قريباً...</p>
+              {/* Order history will be fetched and displayed here */}
             </div>
           </div>
         </div>
 
-        {/* User Profile Management */}
-        <div>
+        {/* Products Section (Right/Bottom on mobile) */}
+        <div className="lg:col-span-2">
           <h2 className="text-2xl font-semibold mb-4">
-            إدارة الملف الشخصي
+            المنتجات المتوفرة
           </h2>
-          <div className="flex flex-col gap-4">
-           {editing ? (
-             <>
-               <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="username">
-                 Username:
-               </label>
-               <input
-                 className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                 id="username"
-                 type="text"
-                 value={username}
-                 onChange={(e) => setUsername(e.target.value)}
-               />
-               <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="website">
-                 Website:
-               </label>
-               <input
-                 className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                 id="website"
-                 type="text"
-                 value={website}
-                 onChange={(e) => setWebsite(e.target.value)}
-               />
-             </>
-           ) : (
-             <>
-               <p>
-                 <strong>Username:</strong> {profile?.username}
-               </p>
-               <p>
-                 <strong>Website:</strong> {profile?.website}
-               </p>
-               <p>
-                 <strong>First Name:</strong> {customer?.first_name}
-               </p>
-               <p>
-                 <strong>Last Name:</strong> {customer?.last_name}
-               </p>
-               <p>
-                 <strong>Email:</strong> {customer?.email}
-               </p>
-             </>
-           )}
-          </div>
+          {!products || products.length === 0 ? (
+            <p className="text-gray-600">لا توجد منتجات لعرضها حالياً.</p>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {(products as Product[]).map((product) => (
+                // Use the client component for each product card
+                <ProductCardClient key={product.id} product={product} />
+              ))}
+            </div>
+          )}
         </div>
       </div>
-      {editing ? (
-       <button
-         className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
-         onClick={updateProfile}
-       >
-         Save
-       </button>
-      ) : (
-       <button
-         className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-         onClick={() => setEditing(true)}
-       >
-         Edit Profile
-       </button>
-      )}
-      <button
-        className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded ml-4"
-        onClick={async () => {
-          await supabase.auth.signOut();
-          router.push('/auth/login');
-        }}
-      >
-        Sign Out
-      </button>
+
+      {/* 
+        Sign Out Button: 
+        This is better handled in a global component like the SiteHeader,
+        which is already a client component and can call supabase.auth.signOut().
+        A form action to a server action for sign out is also an option.
+        Example server action for sign out (add to src/actions/authActions.ts):
+        
+        'use server';
+        import { createClientServer } from '@/lib/supabaseClientServer';
+        import { redirect } from 'next/navigation';
+
+        export async function signOutAction() { // Renamed to avoid conflict if signOut exists
+          const supabase = await createClientServer();
+          const { error } = await supabase.auth.signOut();
+          if (error) {
+            console.error('Sign out error:', error);
+            // Optionally redirect with error or handle differently
+          }
+          redirect('/auth/login'); // Redirect to login page after sign out
+        }
+
+        Then the form would be:
+        <form action={signOutAction} className="mt-12 text-center">
+          <Button type="submit" variant="destructive">Sign Out</Button>
+        </form>
+      */}
     </div>
   );
 }

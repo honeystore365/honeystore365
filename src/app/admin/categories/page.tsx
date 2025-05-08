@@ -18,8 +18,12 @@ import {
   DialogClose,
 } from '@/components/ui/dialog'; // Assurez-vous que ces composants existent
 import { Input } from '@/components/ui/input'; // Assurez-vous que ce composant existe
-import { Label } from '@/components/ui/label'; // Assurez-vous que ce composant existe
-import { addCategory } from '@/actions/categoryActions'; // Import de l'action serveur
+import { Label } from '@/components/ui/label';
+import { addCategory } from '@/actions/categoryActions';
+import { Row } from '@tanstack/react-table'; // Import Row type for actions column
+import { ConfirmationModal } from '@/components/confirmation-modal'; // Import confirmation modal
+// Link component might be needed for Edit button later
+// import Link from 'next/link';
 
 // Type pour les catégories
 interface Category {
@@ -29,18 +33,10 @@ interface Category {
   created_at: string;
 }
 
-// Définition des colonnes pour la DataTable
-const categoryColumns = [
-  {
-    accessorKey: 'name',
-    header: 'Name', // Peut-être traduire en arabe si l'interface est entièrement en arabe
-  },
-  {
-    accessorKey: 'description',
-    header: 'Description', // Peut-être traduire
-  },
-  // Vous pourriez ajouter une colonne pour les actions (modifier, supprimer) ici
-];
+// Définition des colonnes pour la DataTable (outside component to avoid redefining on re-render if fetchCategories isn't needed inside)
+// Note: If actions need fetchCategories, columns must be defined inside CategoriesPage
+// Let's define it inside for now to access fetchCategories in handleDelete
+// const categoryColumns = [ ... ]; // Moved inside component
 
 export default function CategoriesPage() {
   const [categories, setCategories] = useState<Category[]>([]);
@@ -55,8 +51,11 @@ export default function CategoriesPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [addError, setAddError] = useState<string | null>(null); // Erreur spécifique à l'ajout
   const [addSuccess, setAddSuccess] = useState<boolean>(false); // Succès de l'ajout
+  const [editingCategory, setEditingCategory] = useState<Category | null>(null); // State for category being edited
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false); // State for edit dialog
 
-  const formRef = useRef<HTMLFormElement>(null);
+  const formRef = useRef<HTMLFormElement>(null); // Ref for add form
+  const editFormRef = useRef<HTMLFormElement>(null); // Ref for edit form
 
   // Fonction pour récupérer les catégories
   const fetchCategories = async () => {
@@ -87,6 +86,78 @@ console.error('Error fetching categories:', error);
     fetchCategories();
   }, []); // Le tableau vide assure que cela ne s'exécute qu'une fois au montage
 
+  // Define columns inside the component to access fetchCategories
+  const categoryColumns = [
+    {
+      accessorKey: 'name',
+      header: 'الاسم', // Translated to Arabic
+    },
+    {
+      accessorKey: 'description',
+      header: 'الوصف', // Translated to Arabic
+    },
+    {
+      id: 'actions',
+      header: 'إجراءات', // Actions header in Arabic
+      cell: ({ row }: { row: Row<Category> }) => {
+        const category = row.original;
+        const [isDeleting, setIsDeleting] = useState(false);
+        // Need access to fetchCategories to refresh list after delete
+        // This closure will capture fetchCategories from the outer scope
+
+        const handleDelete = async () => {
+          setIsDeleting(true);
+          const supabase = createClientComponent();
+          const { error: deleteError } = await supabase
+            .from('categories')
+            .delete()
+            .eq('id', category.id);
+
+          if (deleteError) {
+            console.error('Error deleting category:', deleteError);
+            // Optionally show an error message to the user
+            alert(`Error deleting category: ${deleteError.message}`); // Simple alert for now
+            setIsDeleting(false);
+            return false; // Indicate failure
+          }
+
+          // Refresh the category list
+          await fetchCategories(); // Call fetchCategories from parent scope
+          setIsDeleting(false);
+          return true; // Indicate success
+        };
+
+        const handleEditClick = () => {
+          setEditingCategory(category);
+          setIsEditDialogOpen(true);
+          // Reset add dialog errors/success if reusing the same dialog state (better to use separate state)
+          setAddError(null);
+          setAddSuccess(false);
+        };
+
+        return (
+          <div className="flex items-center gap-2">
+            {/* Edit Button - Opens Edit Dialog */}
+            <Button variant="outline" size="sm" onClick={handleEditClick}>
+              تعديل {/* Edit */}
+            </Button>
+            <ConfirmationModal
+              title="حذف الفئة" // Delete Category title
+              description="هل أنت متأكد أنك تريد حذف هذه الفئة؟ لا يمكن التراجع عن هذا الإجراء." // Confirmation message
+              onConfirm={handleDelete}
+              confirmText="حذف" // Delete button text
+              cancelText="إلغاء" // Cancel button text
+            >
+              <Button variant="destructive" size="sm" disabled={isDeleting}>
+                {isDeleting ? 'جاري الحذف...' : 'حذف'} {/* Delete / Deleting... */}
+              </Button>
+            </ConfirmationModal>
+          </div>
+        );
+      },
+    },
+  ];
+
   // Handler pour la soumission du formulaire via l'action serveur
   const handleAddCategory = async (formData: FormData) => {
     setIsSubmitting(true);
@@ -103,19 +174,57 @@ console.error('Error fetching categories:', error);
       console.log('Category added:', result?.category);
       setAddSuccess(true); // Indiquer le succès
 
-      // Réinitialiser le formulaire et fermer le dialogue après un court délai pour montrer le succès
-      setTimeout(() => {
-        formRef.current?.reset(); // Vider le formulaire
-        // setNewCategoryName(''); // Non nécessaire si on utilise FormData et reset()
-        // setNewCategoryDescription(''); // Non nécessaire
-        setIsDialogOpen(false); // Fermer le dialogue
-        setAddSuccess(false); // Masquer le message de succès
-        fetchCategories(); // Rafraîchir la liste des catégories après l'ajout
-      }, 1500); // Délai court pour que l'utilisateur voit le message de succès
+      // Réinitialiser le formulaire et fermer le dialogue (removed setTimeout)
+      formRef.current?.reset(); // Vider le formulaire
+      setIsDialogOpen(false); // Fermer le dialogue
+      setAddSuccess(false); // Reset success state (or keep true briefly if desired)
+      fetchCategories(); // Rafraîchir la liste des catégories après l'ajout
 
     }
     setIsSubmitting(false);
   };
+
+  // Handler for the edit form submission
+  const handleUpdateCategory = async (formData: FormData) => {
+    if (!editingCategory) return; // Should not happen if dialog is open
+
+    setIsSubmitting(true);
+    setAddError(null); // Use the same error state for simplicity, or create a separate one
+    setAddSuccess(false);
+
+    const name = formData.get('name') as string;
+    const description = formData.get('description') as string | null;
+
+    // Basic validation (can be enhanced)
+    if (!name || name.trim() === '') {
+        setAddError('اسم الفئة مطلوب.'); // Category name is required.
+        setIsSubmitting(false);
+        return;
+    }
+
+    const supabase = createClientComponent();
+    const { error: updateError } = await supabase
+      .from('categories')
+      .update({ name: name.trim(), description: description?.trim() || null })
+      .eq('id', editingCategory.id);
+
+    if (updateError) {
+      console.error('Error updating category:', updateError);
+      setAddError(updateError.message);
+    } else {
+      console.log('Category updated:', editingCategory.id);
+      setAddSuccess(true); // Indicate success
+
+      // Close dialog and refresh immediately (removed setTimeout)
+      setIsEditDialogOpen(false);
+      setEditingCategory(null);
+      setAddSuccess(false); // Reset success state
+      fetchCategories();
+    }
+
+    setIsSubmitting(false);
+  };
+
 
   return (
     // <AdminLayout> {/* Décommentez si vous utilisez un layout ici */}
@@ -199,6 +308,58 @@ console.error('Error fetching categories:', error);
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* Dialogue pour la modification de catégorie */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]" dir="rtl">
+          <DialogHeader>
+            <DialogTitle>تعديل الفئة</DialogTitle>
+            <DialogDescription>
+              قم بتحديث تفاصيل الفئة.
+            </DialogDescription>
+          </DialogHeader>
+          <form ref={editFormRef} action={handleUpdateCategory}>
+            <div className="grid gap-4 py-4">
+              {/* Afficher l'erreur d'ajout/modification ici */}
+              {addError && <p className="text-red-500 text-sm">{addError}</p>}
+              {/* Afficher le message de succès ici */}
+              {addSuccess && <p className="text-green-600 text-sm">تم تحديث الفئة بنجاح!</p>}
+
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="edit-name" className="text-right">
+                  الاسم
+                </Label>
+                <Input
+                  id="edit-name"
+                  name="name"
+                  defaultValue={editingCategory?.name || ''} // Pre-fill with current name
+                  className="col-span-3 text-right"
+                  required
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="edit-description" className="text-right">
+                  الوصف
+                </Label>
+                <Input
+                  id="edit-description"
+                  name="description"
+                  defaultValue={editingCategory?.description || ''} // Pre-fill with current description
+                  className="col-span-3 text-right"
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setIsEditDialogOpen(false)} disabled={isSubmitting}>
+                إلغاء
+              </Button>
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? 'جاري التحديث...' : 'تحديث الفئة'}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </>
     // </AdminLayout> {/* Décommentez si vous utilisez un layout ici */}
   );

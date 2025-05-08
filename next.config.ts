@@ -1,4 +1,3 @@
-
 import type {NextConfig} from 'next';
 
 const nextConfig: NextConfig = {
@@ -22,6 +21,12 @@ const nextConfig: NextConfig = {
         hostname: 'via.placeholder.com',
         port: '',
         pathname: '/**',
+      },
+      { // Added for Supabase Storage
+        protocol: 'https',
+        hostname: 'llsifflkfjogjagmbmpi.supabase.co', // Replace with your Supabase project ID hostname
+        port: '',
+        pathname: '/storage/v1/object/public/**', // Allow access to public storage objects
       },
     ],
   },

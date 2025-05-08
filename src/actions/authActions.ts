@@ -51,7 +51,7 @@ export async function signIn(formData: FormData) {
     console.log('Server Action: Admin detected, redirecting to /admin');
     redirect('/admin');
   } else {
-    console.log('Server Action: Non-admin user detected, redirecting to /');
-    redirect('/');
+    console.log('Server Action: Non-admin user detected, redirecting to /profile');
+    redirect('/profile');
   }
 }

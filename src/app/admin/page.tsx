@@ -9,7 +9,7 @@ import { Users, Package, Tags, ShoppingCart, DollarSign } from 'lucide-react';
 // --- Composant Carte Statistique ---
 interface StatCardProps {
   title: string;
-  value: string | number;
+  value: string | number | undefined; // Allow undefined for loading/error states
   icon: React.ElementType;
   bgColor?: string; // Optionnel pour couleur de fond
 }
@@ -29,45 +29,45 @@ function StatCard({ title, value, icon: Icon, bgColor = 'bg-white' }: StatCardPr
 }
 
 // --- Composant Tableau Commandes Récentes ---
-// Adaptez les types en fonction de votre table 'orders'
+// Adaptez les types en fonction de votre table 'orders' - Use actual column names
 interface Order {
-  id: number; // ou string si UUID
-  created_at: string;
-  // Adaptez selon votre schema: user_id, customer_email, total_price, status etc.
-  customer_identifier?: string; // Exemple: email ou ID client
-  total?: number;
-  status?: string;
+  id: string; // uuid
+  order_date: string; // timestamp with time zone
+  customer_id?: string; // Assuming this exists for customer identifier
+  total_amount?: number; // Use actual column name
+  status?: string; // Assuming status column exists
 }
 
 function RecentOrdersTable({ orders }: { orders: Order[] }) {
     if (!orders || orders.length === 0) {
-        return <p className="text-gray-500 mt-4">No recent orders found.</p>;
+        return <p className="text-gray-500 mt-4">لم يتم العثور على طلبات حديثة.</p>; // Translated
     }
 
   return (
     <div className="bg-white p-6 rounded-lg shadow-md mt-8">
-      <h2 className="text-xl font-semibold mb-4 text-gray-800">Recent Orders</h2>
+      <h2 className="text-xl font-semibold mb-4 text-gray-800">الطلبات الأخيرة</h2> {/* Translated */}
       <div className="overflow-x-auto">
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Order ID</th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customer</th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+              <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">معرف الطلب</th> {/* Translated */}
+              <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">التاريخ</th> {/* Translated */}
+              <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">العميل</th> {/* Translated */}
+              <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">المجموع</th> {/* Translated */}
+              <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">الحالة</th> {/* Translated */}
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
             {orders.map((order) => (
               <tr key={order.id}>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{order.id}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {new Date(order.created_at).toLocaleDateString()} {/* Formatage simple */}
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 text-right">{order.id}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">
+                  {new Date(order.order_date).toLocaleDateString()} {/* Use order_date */}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{order.customer_identifier || 'N/A'}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{order.total !== undefined ? `$${order.total.toFixed(2)}` : 'N/A'}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                {/* Assuming customer_id exists and needs fetching related customer name/email */}
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">{order.customer_id || 'N/A'}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">{order.total_amount !== undefined ? `$${order.total_amount.toFixed(2)}` : 'N/A'}</td> {/* Use total_amount */}
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">
                   {/* Style simple pour le statut */}
                   <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
                     order.status === 'Completed' ? 'bg-green-100 text-green-800' :
@@ -90,11 +90,11 @@ function RecentOrdersTable({ orders }: { orders: Order[] }) {
 
 // --- Page Principale du Dashboard ---
 export default async function AdminPage() {
-  const supabase = await createClientServer();
+  const supabase = await createClientServer(); // Use standard server client - Added await
 
 
   // --- Récupération des données ---
-  // ATTENTION: Adaptez les noms de tables ('products', 'categories', 'orders', 'profiles' ou 'customers')
+  // ATTENTION: Adaptez les noms de tables ('products', 'categories', 'orders', 'customers')
   // et les colonnes selon VOTRE schéma exact !
 
   // Nombre de Produits
@@ -112,26 +112,35 @@ export default async function AdminPage() {
     .from('orders') // <- Adaptez le nom de la table
     .select('*', { count: 'exact', head: true });
 
-  // Nombre de Clients (Utilisateurs authentifiés)
-  // Pour Supabase Auth, c'est un peu différent
-  const supabaseAdmin = await createClientServer('service_role');
-  const { data: usersData, error: usersError } = await supabaseAdmin.auth.admin.listUsers();
-  const customerCount = usersData?.users?.length ?? 0; // Nombre total d'utilisateurs
+  // Nombre de Clients (Non-Admin) using RPC
+  const { data: nonAdminCustomers, error: customerRpcError } = await supabase.rpc('get_non_admin_customers');
+  const customerCount = nonAdminCustomers?.length; // Count non-admin customers
+  // Note: Handle customerRpcError if needed
 
-   // Commandes Récentes (Exemple: 5 dernières)
+   // Commandes Récentes (Exemple: 5 dernières) - Use correct columns
    const { data: recentOrders, error: recentOrdersError } = await supabase
-   .from('orders') // <- Adaptez le nom de la table
-   .select('id, created_at, customer_identifier, total, status') // <- Adaptez les colonnes nécessaires
-   .order('created_at', { ascending: false })
+   .from('orders')
+   .select('id, order_date, customer_id, total_amount, status') // Use correct columns
+   .order('order_date', { ascending: false }) // Use order_date
    .limit(5);
 
-  // Gestion basique des erreurs (vous pouvez améliorer ceci)
-  if (productError || categoryError || orderError || usersError || recentOrdersError) {
-      console.error("Error fetching dashboard data:", { productError, categoryError, orderError, usersError, recentOrdersError });
-      if (recentOrdersError) {
-          console.error("Details of recentOrdersError:", recentOrdersError);
-      }
-      // Afficher un message d'erreur à l'utilisateur pourrait être utile ici
+  // Gestion basique des erreurs (vous pouvez améliorer ceci) - Added customerRpcError
+  const errors = { productError, categoryError, orderError, customerRpcError, recentOrdersError };
+  let hasError = false;
+  for (const key in errors) {
+    const errorValue = errors[key as keyof typeof errors];
+    if (errorValue) {
+      hasError = true;
+      // Attempt to log message and details if they exist, otherwise the whole object
+      const errorMessage = errorValue.message ? `${errorValue.message}${errorValue.details ? ` (${errorValue.details})` : ''}` : JSON.stringify(errorValue);
+      console.error(`Error fetching ${key.replace('Error', '')}:`, errorMessage);
+    }
+  }
+
+  if (hasError) {
+    console.error("Overall dashboard data fetching encountered issues. See details above. Raw error objects:", errors);
+    // Afficher un message d'erreur à l'utilisateur pourrait être utile ici,
+    // par exemple, en passant un état d'erreur aux composants enfants ou à la page.
   }
 
   return (
@@ -143,6 +152,7 @@ export default async function AdminPage() {
 
       {/* Grille pour les cartes statistiques */}
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+        {/* Use customerCount from RPC */}
         <StatCard title="إجمالي العملاء" value={customerCount ?? 'N/A'} icon={Users} />
         <StatCard title="إجمالي المنتجات" value={productCount ?? 'N/A'} icon={Package} />
         <StatCard title="إجمالي الفئات" value={categoryCount ?? 'N/A'} icon={Tags} />

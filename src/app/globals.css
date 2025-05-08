@@ -4,8 +4,17 @@
 @tailwind components;
 @tailwind utilities;
 
+html, body {
+  width: 100%;
+  max-width: none !important; /* Ensure full width, overriding other max-width */
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden; /* Prevent horizontal scrollbars if something inadvertently overflows */
+}
+
 body {
   font-family: 'Cormorant Garamond', serif;
+  min-height: 100vh; /* Ensure body takes at least full viewport height */
 }
 
 @layer base {
@@ -98,4 +107,3 @@ body {
 html {
   scroll-behavior: smooth;
 }
-
