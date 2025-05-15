@@ -10,7 +10,6 @@ import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
 import { deleteOrder } from '@/actions/checkoutActions';
 import { Session } from '@supabase/supabase-js';
-import { createClientComponent } from '@/lib/supabaseClient';
 
 interface CustomerInfo {
   first_name: string | null;
@@ -143,6 +142,7 @@ export default function OrdersPage() {
 
         const handleValidate = async () => {
           console.log('Validate button clicked for order:', order.id);
+          console.log('Sending orderId to API:', order.id);
           try {
             const response = await fetch('/api/generate-invoice', {
               method: 'POST',

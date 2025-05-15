@@ -9,7 +9,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
-import { Button } from "./ui/button" // Changed to relative path
+import { Button } from "@/components/ui/button" // Changed to relative path
 import React from "react" // Import React
 
 interface ConfirmationModalProps {

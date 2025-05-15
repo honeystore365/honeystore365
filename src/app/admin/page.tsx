@@ -1,8 +1,10 @@
-// src/app/admin/page.tsx
-import { cookies } from 'next/headers';
-import { createClientServer } from '@/lib/supabaseClientServer';
-import { Database } from '@/types/supabase'; // Adjusted to use absolute path alias
+'use client';
 
+import { useState, useEffect, useTransition } from 'react';
+import { createClient } from '@/lib/supabaseClient';
+import { Database } from '@/types/supabase';
+import { setRecentOrdersCookie } from '@/actions/adminActions';
+import { getRecentOrdersCookie } from '@/actions/cookieActions';
 // --- Icônes pour les cartes (optionnel, exemple avec lucide-react) ---
 import { Users, Package, Tags, ShoppingCart, DollarSign } from 'lucide-react';
 
@@ -33,16 +35,18 @@ function StatCard({ title, value, icon: Icon, bgColor = 'bg-white' }: StatCardPr
 interface Order {
   id: string; // uuid
   order_date: string; // timestamp with time zone
-  customer_id?: string; // Assuming this exists for customer identifier
+  customer_id?: string | null | undefined; // Assuming this exists for customer identifier
   total_amount?: number; // Use actual column name
-  status?: string; // Assuming status column exists
-  customers: { first_name: string | null; last_name: string | null }[] | null; // Include customer names, returned as array by Supabase
+  customers: { first_name: string | null; last_name: string | null } | null; // Include customer names
 }
 
-function RecentOrdersTable({ orders }: { orders: Order[] }) {
-    if (!orders || orders.length === 0) {
-        return <p className="text-gray-500 mt-4">لم يتم العثور على طلبات حديثة.</p>;
-    }
+import React from 'react';
+
+const RecentOrdersTable = React.memo(function RecentOrdersTable({ orders }: { orders: Order[] }) {
+  console.log("RecentOrdersTable rendered with orders:", orders);
+  if (!orders || orders.length === 0) {
+    return <p className="text-gray-500 mt-4">لم يتم العثور على طلبات حديثة.</p>;
+  }
 
   return (
     <div className="bg-white p-6 rounded-lg shadow-md mt-8">
@@ -50,106 +54,146 @@ function RecentOrdersTable({ orders }: { orders: Order[] }) {
       <div className="overflow-x-auto">
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
-            <tr><th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">#</th>{/* Sequential Order Number */}<th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">معرف الطلب</th><th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">التاريخ</th><th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">العميل</th><th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">المجموع</th><th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">الحالة</th></tr>
+            <tr>
+              <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                #
+              </th>
+              <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                معرف الطلب
+              </th>
+              <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                التاريخ
+              </th>
+              <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                العميل
+              </th>
+              <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                المجموع
+              </th>
+              <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                الحالة
+              </th>
+            </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            {orders.map((order, index) => {
-              console.log(`Order ${order.id} data:`, order); // Add this log
-              return (
+            {orders.map((order, index) => (
               <tr key={order.id}>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 text-right">{index + 1}</td> {/* Sequential Order Number */}
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 text-right">{order.id}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">
-                  {new Date(order.order_date).toLocaleDateString()} {/* Use order_date */}
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 text-right">
+                  {index + 1}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 text-right">
+                  {order.id}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">
-                  {/* Display customer name from the first element of the customers array */}
-                  {order.customers && order.customers.length > 0 ? `${order.customers[0].first_name || ''} ${order.customers[0].last_name || ''}`.trim() : 'N/A'}
+                  {new Date(order.order_date).toLocaleDateString()}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">{order.total_amount !== undefined ? `$${order.total_amount.toFixed(2)}` : 'N/A'}</td> {/* Use total_amount */}
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">
-                  {/* Style simple pour le statut */}
-                  <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                    order.status === 'Completed' ? 'bg-green-100 text-green-800' :
-                    order.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
-                    order.status === 'Cancelled' ? 'bg-red-100 text-red-800' :
-                    'bg-gray-100 text-gray-800'
-                  }`}>
-                    {order.status || 'N/A'}
-                  </span>
+                  {order.customers && order.customers !== null
+                    ? `${order.customers.first_name || ''} ${order.customers.last_name || ''}`.trim()
+                    : 'N/A'}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">
+                  {order.total_amount !== undefined ? `$${order.total_amount.toFixed(2)}` : 'N/A'}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">
+                  N/A
                 </td>
               </tr>
-            )})}
+            ))}
           </tbody>
         </table>
       </div>
     </div>
   );
-}
-
-
+});
 // --- Page Principale du Dashboard ---
-export default async function AdminPage() {
-  const supabase = await createClientServer(); // Use standard server client - Added await
+export default function AdminPage() {
+  console.log("AdminPage rendered");
+  const [isPending, startTransition] = useTransition();
+  const [recentOrders, setRecentOrders] = useState<Order[] | null>(null);
+  const [recentOrdersError, setRecentOrdersError] = useState<any>(null);
+  const supabase = createClient();
+  
+  const [productCount, setProductCount] = useState<number | undefined>(undefined);
+  const [categoryCount, setCategoryCount] = useState<number | undefined>(undefined);
+  const [orderCount, setOrderCount] = useState<number | undefined>(undefined);
+  const [customerCount, setCustomerCount] = useState<number | undefined>(undefined);
 
+  useEffect(() => {
+    console.log("useEffect in AdminPage ran");
+    const fetchOrders = async () => {
+      let productCountData: number | null = null;
+      let productErrorData: any = null;
+      let categoryCountData: number | null = null;
+      let categoryErrorData: any = null;
+      let orderCountData: number | null = null;
+      let orderErrorData: any = null;
+      let customerRpcErrorData: any = null;
+      let nonAdminCustomers: any[] | null = null;
+      
+      try {
+        const productResult = await supabase
+          .from('products')
+          .select('*', { count: 'exact', head: true });
+        productCountData = productResult.count;
+        productErrorData = productResult.error;
 
-  // --- Récupération des données ---
-  // ATTENTION: Adaptez les noms de tables ('products', 'categories', 'orders', 'customers')
-  // et les colonnes selon VOTRE schéma exact !
+        const categoryResult = await supabase
+          .from('categories')
+          .select('*', { count: 'exact', head: true });
+        categoryCountData = categoryResult.count;
+        categoryErrorData = categoryResult.error;
 
-  // Nombre de Produits
-  const { count: productCount, error: productError } = await supabase
-    .from('products') // <- Adaptez le nom de la table
-    .select('*', { count: 'exact', head: true });
+        const orderResult = await supabase
+          .from('orders')
+          .select('*', { count: 'exact', head: true });
+        orderCountData = orderResult.count;
+        orderErrorData = orderResult.error;
 
-  // Nombre de Catégories
-  const { count: categoryCount, error: categoryError } = await supabase
-    .from('categories') // <- Adaptez le nom de la table
-    .select('*', { count: 'exact', head: true });
+        const customerRpcResult: any = await supabase.rpc('get_non_admin_customers');
+        nonAdminCustomers = (customerRpcResult?.data) as {first_name: string | null, last_name: string | null}[];
+        customerRpcErrorData = customerRpcResult.error;
 
-  // Nombre de Commandes
-  const { count: orderCount, error: orderError } = await supabase
-    .from('orders') // <- Adaptez le nom de la table
-    .select('*', { count: 'exact', head: true });
+        const cachedOrders = await getRecentOrdersCookie();
+        if (cachedOrders) {
+          setRecentOrders(JSON.parse(cachedOrders));
+          setRecentOrdersError(null);
+          console.log('Using cached orders:', JSON.parse(cachedOrders));
+        } else {
+          const { data, error } = await supabase
+            .from('orders')
+            .select('id, order_date, customer_id, total_amount, customers(first_name, last_name)')
+            .order('order_date', { ascending: true })
+            .limit(5) as { data: Order[] | null, error: any };
 
-  // Nombre de Clients (Non-Admin) using RPC
-  const { data: nonAdminCustomers, error: customerRpcError } = await supabase.rpc('get_non_admin_customers');
-  const customerCount = nonAdminCustomers?.length; // Count non-admin customers
-  // Note: Handle customerRpcError if needed
+          if (data) {
+            console.log("useEffect - data before setRecentOrders:", data);
+            setRecentOrders(data);
+            setRecentOrdersError(null);
+            startTransition(() => {
+              setRecentOrdersCookie(data);
+            });
+            console.log('Caching orders:', data);
+          } else {
+            setRecentOrdersError(error);
+          }
+        }
+      } catch (error: any) {
+        console.error("Error fetching data:", error);
+      } finally {
+        setProductCount(productCountData ?? undefined);
+        setCategoryCount(categoryCountData ?? undefined);
+        setOrderCount(orderCountData ?? undefined);
+        setCustomerCount(nonAdminCustomers?.length ?? undefined);
+      }
+    };
 
-   // Commandes Récentes (Exemple: 5 dernières) - Use correct columns
-   const { data: recentOrders, error: recentOrdersError } = await supabase
-   .from('orders')
-   .select('id, order_date, customer_id, total_amount, status, customers(first_name, last_name)') // Select customer names
-   .order('order_date', { ascending: true }) // Order by date ascending
-   .limit(5);
+    fetchOrders();
+  }, [supabase, startTransition]);
 
-  console.log('Fetched recent orders:', recentOrders); // Add this line for debugging
-  const typedRecentOrders: Order[] = recentOrders as Order[]; // Explicitly cast to Order[]
-
-  // Gestion basique des erreurs (vous pouvez améliorer ceci) - Added customerRpcError
-
- // Gestion basique des erreurs (vous pouvez améliorer ceci) - Added customerRpcError
-  const errors = { productError, categoryError, orderError, customerRpcError, recentOrdersError };
-  let hasError = false;
-  for (const key in errors) {
-    const errorValue = errors[key as keyof typeof errors];
-    if (errorValue) {
-      hasError = true;
-      // Attempt to log message and details if they exist, otherwise the whole object
-      const errorMessage = errorValue.message ? `${errorValue.message}${errorValue.details ? ` (${errorValue.details})` : ''}` : JSON.stringify(errorValue);
-      console.error(`Error fetching ${key.replace('Error', '')}:`, errorMessage);
-    }
-  }
-
-  if (hasError) {
-    console.error("Overall dashboard data fetching encountered issues. See details above. Raw error objects:", errors);
-    // Afficher un message d'erreur à l'utilisateur pourrait être utile ici,
-    // par exemple, en passant un état d'erreur aux composants enfants ou à la page.
-  }
+  const typedRecentOrders: Order[] = (recentOrders as any) as Order[];
 
   return (
-    // Le layout AdminLayout est appliqué automatiquement
     <div>
       <h1 className="text-3xl font-bold mb-8 text-gray-900">
         لوحة تحكم المشرف
@@ -163,14 +207,12 @@ export default async function AdminPage() {
         <StatCard title="إجمالي الفئات" value={categoryCount ?? 'N/A'} icon={Tags} />
         <StatCard title="إجمالي الطلبات" value={orderCount ?? 'N/A'} icon={ShoppingCart} />
         {/* Ajoutez d'autres cartes si nécessaire (ex: Revenu Total) */}
-        {/* <StatCard title="Total Revenue" value="$12,345" icon={DollarSign} /> */}
       </div>
 
-      {/* Tableau des commandes récentes */}
+      {/* Tableau des commandes الأخيرة */}
       <RecentOrdersTable orders={typedRecentOrders || []} />
 
       {/* Vous pouvez ajouter d'autres sections ici */}
-
     </div>
   );
 }

@@ -64,6 +64,7 @@ export default function ProductCardClient({ product }: { product: Product }) {
           layout="fill"
           objectFit="cover"
           className="rounded-t-xl"
+          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
         />
       </div>
       <div className="p-5 flex flex-col flex-grow">

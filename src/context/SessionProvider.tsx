@@ -2,7 +2,7 @@
 
 import React, { createContext, useState, useEffect, useContext, ReactNode } from 'react';
 import type { Session } from '@supabase/supabase-js';
-import { createClientComponent } from '@/lib/supabaseClient'; // Use client component client
+import { createClient } from '@/lib/supabaseClient'; // Use client component client
 
 import { SupabaseClient } from '@supabase/supabase-js';
 
@@ -22,8 +22,8 @@ interface SessionProviderProps {
 export function SessionProvider({ children, serverSession }: SessionProviderProps) {
   const [session, setSession] = useState<Session | null>(serverSession);
   // If serverSession is null, we might be waiting for client-side hydration to confirm session status
-  const [loading, setLoading] = useState(serverSession === null); 
-  const supabase = createClientComponent();
+  const [loading, setLoading] = useState(serverSession === null);
+  const supabase = createClient();
 
   useEffect(() => {
     // This effect runs on the client after initial render.

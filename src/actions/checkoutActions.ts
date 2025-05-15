@@ -1,6 +1,7 @@
 'use server';
 
-import { createClientServer } from '@/lib/supabaseClientServer'; // Server-side Supabase client
+import { createClientServer } from '@/lib/supabaseClientServer';
+import { createClient } from '@supabase/supabase-js';
 import { cookies } from 'next/headers';
 
 interface CartProduct {
@@ -95,7 +96,7 @@ interface OrderCreationParams {
 export async function createOrder(params: OrderCreationParams): Promise<{ orderId: string | null; error: string | null }> {
   // const cookieStore = cookies(); // createClientServer handles cookies internally
   const supabase = await createClientServer();
-  const { customerId, shippingAddressId, items, totalAmount, deliveryFee, paymentMethod } = params;
+    const { customerId, shippingAddressId, items, totalAmount, deliveryFee, paymentMethod } = params;
 
   // 1. Create the order
   const { data: orderData, error: orderError } = await supabase
@@ -164,19 +165,61 @@ export async function createOrder(params: OrderCreationParams): Promise<{ orderI
 }
 
 export async function deleteOrder(orderId: string): Promise<{ success: boolean; error: string | null }> {
-  const supabase = await createClientServer();
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-  // Delete the order from the 'orders' table
-  const { error } = await supabase
-    .from('orders')
-    .delete()
-    .eq('id', orderId);
-
-  if (error) {
-    console.error(`Error deleting order ${orderId}:`, error);
-    return { success: false, error: `Failed to delete order: ${error.message}` };
+  if (!supabaseUrl || !supabaseKey) {
+    console.error('[deleteOrder] Missing SUPABASE_SERVICE_ROLE_KEY or NEXT_PUBLIC_SUPABASE_URL');
+    return { success: false, error: 'Server configuration error.' };
   }
 
-  console.log(`Order ${orderId} deleted successfully.`);
-  return { success: true, error: null };
+  const supabase = createClient(supabaseUrl, supabaseKey, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false
+    }
+  });
+
+  console.log(`[deleteOrder] Attempting to delete order: ${orderId}`);
+
+  try {
+    // First, delete related records from the 'order_items' table
+    const { error: deleteItemsError } = await supabase
+      .from('order_items')
+      .delete()
+      .eq('order_id', orderId);
+
+    if (deleteItemsError) {
+      console.error(`[deleteOrder] Error deleting order items for order ${orderId}:`, deleteItemsError);
+      return { success: false, error: `Failed to delete order items: ${deleteItemsError.message}` };
+    }
+    console.log(`[deleteOrder] Successfully deleted order items for order ${orderId}.`);
+
+    // Then, delete related records from the 'payments' table
+    const { error: deletePaymentsError } = await supabase
+      .from('payments')
+      .delete()
+      .eq('order_id', orderId);
+
+    if (deletePaymentsError) {
+      console.error(`[deleteOrder] Error deleting payments for order ${orderId}:`, deletePaymentsError);
+      return { success: false, error: `Failed to delete payments: ${deletePaymentsError.message}` };
+    }
+
+    // Finally, delete the order from the 'orders' table
+    const { error: deleteOrderError } = await supabase
+      .from('orders')
+      .delete()
+      .eq('id', orderId);
+
+    if (deleteOrderError) {
+      console.error(`[deleteOrder] Error deleting order ${orderId}:`, deleteOrderError);
+      return { success: false, error: `Failed to delete order: ${deleteOrderError.message}` };
+    }
+
+    return { success: true, error: null };
+  } catch (error: any) {
+    console.error(`[deleteOrder] Unexpected error deleting order ${orderId}:`, error);
+    return { success: false, error: `Unexpected error deleting order: ${error.message}` };
+  }
 }

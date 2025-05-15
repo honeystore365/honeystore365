@@ -11,6 +11,7 @@ const BROWSERLESS_API_TOKEN = process.env.BROWSERLESS_API_TOKEN;
 export async function generatePdfBuffer(
   invoiceData: InvoiceTemplateProps
 ): Promise<Buffer> {
+  console.log('[generatePdfBuffer] Starting PDF generation...');
   // Dynamically import ReactDOMServer to prevent bundling issues
   const ReactDOMServer = (await import('react-dom/server')).default;
 
@@ -45,20 +46,28 @@ export async function generatePdfBuffer(
     } else {
        console.warn("Global CSS file not found for PDF injection. Styles might be incomplete.");
     }
-  } catch (e) {
-    console.error("Error reading or injecting global CSS for PDF:", e); // Changed warn to error and added context
+  } catch (cssError) {
+    console.error("Error reading or injecting global CSS for PDF:", cssError); // Changed warn to error and added context
   }
 
 
   await page.setContent(htmlContent, { waitUntil: 'networkidle0' });
   console.log('HTML content set. Generating PDF...'); // Added logging
-  const pdfBuffer = await page.pdf({
-    format: 'A4',
-    printBackground: true,
-    margin: { top: '20mm', right: '20mm', bottom: '20mm', left: '20mm' },
-  });
+  let pdfBuffer;
+  try {
+    pdfBuffer = await page.pdf({
+      format: 'A4',
+      printBackground: true,
+      margin: { top: '20mm', right: '20mm', bottom: '20mm', left: '20mm' },
+    });
+    console.log('PDF generated successfully.'); // Added logging
+  } catch (pdfError) {
+    console.error('Error generating PDF:', pdfError);
+    throw pdfError; // Re-throw to be caught by the API route
+  }
   console.log('PDF generated. Closing browser...'); // Added logging
   await browser.close();
   console.log('Browser closed. Returning PDF buffer.'); // Added logging
+  console.log('[generatePdfBuffer] PDF generation complete.');
   return Buffer.from(pdfBuffer); // Ensure it's a Node.js Buffer
 }

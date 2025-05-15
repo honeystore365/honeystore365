@@ -38,7 +38,7 @@ export default async function Home() {
           height={400}
           priority
           className="absolute inset-0 object-cover w-full"
-          style={{ height: 'auto' }}
+          style={{ width: 'auto', height: 'auto'}}
         />
         <div className="relative z-20 p-12 flex flex-col items-center justify-center min-h-[400px]">
           <h1 className="text-5xl font-bold text-center mb-6">

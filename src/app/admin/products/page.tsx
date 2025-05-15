@@ -123,9 +123,11 @@ export default function ProductsPage() {
             description="هل أنت متأكد أنك تريد حذف هذا المنتج؟ لا يمكن التراجع عن هذا الإجراء."
             onConfirm={handleDelete}
           >
-            <Button variant="destructive" size="sm" disabled={isDeleting}>
-              {isDeleting ? 'جاري الحذف...' : 'حذف'}
-            </Button>
+            <span>
+              <Button variant="destructive" size="sm" disabled={isDeleting}>
+                {isDeleting ? 'جاري الحذف...' : 'حذف'}
+              </Button>
+            </span>
           </ConfirmationModal>
         </div>
       );

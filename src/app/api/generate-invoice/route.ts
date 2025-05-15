@@ -17,14 +17,16 @@ interface CustomerAddressForInvoice {
   address_line_1?: string | null; address_line_2?: string | null; city?: string | null;
   state?: string | null; postal_code?: string | null; country?: string | null; phone_number?: string | null;
 }
-interface CustomerInfoForInvoice { first_name?: string | null; last_name?: string | null; email?: string | null; }
+interface CustomerInfoForInvoice { first_name?: string | null; last_name?: string | null; email: string | null; }
 interface OrderDetailsForInvoice {
   id: string; order_date: string; total_amount: number; delivery_fee: number; payment_method?: string;
 }
-
 export async function POST(req: NextRequest) {
+  console.log("Entering POST function in generate-invoice/route.ts");
+  console.log('[API/generate-invoice] POST request received.');
   try {
     const { orderId } = await req.json();
+    console.log(`[API/generate-invoice] Order ID received: ${orderId}`);
     if (!orderId) {
       return NextResponse.json({ error: 'Order ID is required' }, { status: 400 });
     }
@@ -58,9 +60,10 @@ export async function POST(req: NextRequest) {
       .eq('order_id', orderId);
 
     if (orderItemsError || !orderItemsData) {
-      console.error(`[API/generate-invoice] Error fetching order items for order ${orderId}:`, orderItemsError);
+      console.error(`[API/generate-invoice] Error fetching order items for order ${orderId}:`, orderError);
       return NextResponse.json({ error: `Failed to fetch order items: ${orderItemsError?.message}` }, { status: 500 });
     }
+    console.log('[API/generate-invoice] orderItemsData:', JSON.stringify(orderItemsData, null, 2));
 
     // 3. Prepare data for the InvoiceTemplate (same as before)
     const customer = orderData.customers;
@@ -83,22 +86,39 @@ export async function POST(req: NextRequest) {
       }),
       logoUrl: `${req.nextUrl.origin}/icon.png`, // Base URL for logo if PDF service fetches it
     };
+    console.log('[API/generate-invoice] invoiceData:', JSON.stringify(invoiceData, null, 2));
 
     // 4. Generate the PDF using generatePdfBuffer
-    const pdfBuffer = await generatePdfBuffer(invoiceData);
-
-    console.log('[API/generate-invoice] PDF buffer generated. Size:', pdfBuffer.length); // Add log
+    let pdfBuffer;
+    try {
+      pdfBuffer = await generatePdfBuffer(invoiceData);
+      console.log('[API/generate-invoice] PDF buffer generated. Size:', pdfBuffer.length); // Add log
+    } catch (error: any) {
+      console.error('[API/generate-invoice] Error generating PDF buffer:', error);
+      return NextResponse.json({ error: `Failed to generate PDF: ${error.message}` }, { status: 500 });
+    }
 
     // 5. Upload the PDF to Uploadthing
-    console.log('Value of UPLOADTHING_SECRET:', process.env.UPLOADTHING_SECRET); // Added logging for env var
+    console.log('Value of NEXT_PUBLIC_SUPABASE_URL:', process.env.NEXT_PUBLIC_SUPABASE_URL);
+    console.log('Value of NEXT_PUBLIC_SUPABASE_ANON_KEY:', process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
+
+    if (!process.env.UPLOADTHING_TOKEN) {
+      console.error('[API/generate-invoice] UPLOADTHING_TOKEN is not set.');
+      return NextResponse.json({ error: 'UPLOADTHING_TOKEN is not set' }, { status: 500 });
+    }
+
+    console.log('Value of UPLOADTHING_TOKEN:', process.env.UPLOADTHING_TOKEN); // Added logging for env var
     console.log('Value of utapi:', utapi); // Added logging for utapi
+
     const blob = new Blob([pdfBuffer], { type: "application/pdf" });
     const file = new File([blob], `invoice-${orderId}.pdf`, { type: "application/pdf" });
     const uploadthingResponse = await utapi.uploadFiles(file);
 
-    if (uploadthingResponse.error) { // Check for error property
-      console.error(`[API/generate-invoice] Uploadthing failed to upload file:`, uploadthingResponse.error); // Log the specific error
-      return NextResponse.json({ error: `Uploadthing failed to upload file: ${uploadthingResponse.error.message}` }, { status: 500 }); // Return error message
+    if (uploadthingResponse.error) {
+      console.error(`[API/generate-invoice] Uploadthing failed to upload file:`, uploadthingResponse.error);
+      return NextResponse.json({ error: `Uploadthing failed to upload file: ${uploadthingResponse.error.message}` }, { status: 500 });
+    } else {
+      console.log(`[API/generate-invoice] Uploadthing upload successful:`, uploadthingResponse.data);
     }
 
     const pdfUrl = uploadthingResponse.data.url; // Access url from data property
@@ -113,19 +133,25 @@ export async function POST(req: NextRequest) {
 
     if (updateError) {
       console.error(`[API/generate-invoice] Error updating order with PDF URL:`, updateError);
-      return NextResponse.json({ error: `Failed to update order with PDF URL: ${updateError?.message}` }, { status: 500 });
     }
 
-    return new NextResponse(Buffer.from(pdfBuffer), {
-      status: 200,
-      headers: {
-        'Content-Type': 'application/pdf',
-        'Content-Disposition': `attachment; filename="invoice-${orderId}.pdf"`,
-      },
-    });
+    let response: NextResponse;
+    try {
+      response = new NextResponse(pdfBuffer as Buffer, {
+        status: 200,
+        headers: {
+          'Content-Type': 'application/pdf',
+          'Content-Disposition': `attachment; filename="invoice-${orderId}.pdf"`,
+        },
+      });
 
+    } catch (error: any) {
+      console.error('[API/generate-invoice] Error creating NextResponse:', error);
+      return NextResponse.json({ error: `Failed to generate PDF: ${error.message}` }, { status: 500 });
+    }
   } catch (error: any) {
     console.error('[API/generate-invoice] Unhandled error in POST:', error);
     return NextResponse.json({ error: `Failed to generate PDF: ${error.message}` }, { status: 500 });
   }
+  console.log('[API/generate-invoice] POST request completed.');
 }

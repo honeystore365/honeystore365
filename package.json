@@ -43,6 +43,7 @@
     "@tanstack-query-firebase/react": "^1.0.5",
     "@tanstack/react-query": "^5.66.0",
     "@tanstack/react-table": "^8.21.3",
+    "circular-json": "^0.5.9",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "date-fns": "^3.6.0",
@@ -70,6 +71,7 @@
     "zod": "^3.24.2"
   },
   "devDependencies": {
+    "@types/circular-json": "^0.4.0",
     "@types/next": "^8.0.7",
     "@types/node": "^20",
     "@types/react": "^18",
