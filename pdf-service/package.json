@@ -1,0 +1,20 @@
+{
+  "name": "pdf-service",
+  "version": "1.0.0",
+  "description": "Service for generating PDF invoices using Puppeteer.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node -r esbuild-register server.js",
+    "dev": "nodemon -r esbuild-register server.js"
+  },
+  "dependencies": {
+    "express": "^4.17.1",
+    "puppeteer": "^22.0.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "devDependencies": {
+    "esbuild-register": "^3.6.0",
+    "nodemon": "^2.0.15"
+  }
+}

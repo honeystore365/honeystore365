@@ -4,7 +4,7 @@ import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { cn } from '@/lib/utils';
-import { createClientComponent } from '@/lib/supabaseClient'; // Keep for signOut
+// import { createClientComponent } from '@/lib/supabaseClient'; // Keep for signOut - Removed
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react'; // Keep useState, add useEffect back just in case, though likely not needed for session
 import type { Session } from '@supabase/supabase-js'; // Re-add Session type import
@@ -42,16 +42,41 @@ const authLinks = [
 
 // --- Component ---
 export function SiteHeader() {
-  // Get session state from context
-  const { session, loading } = useSession(); // Use context hook
+  // Get session state from context at the top level
+  const { session, loading, supabase } = useSession(); // Call useSession at the top level
+
   const [cartItemCount, setCartItemCount] = useState(0); // Keep cart state if needed
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false); // Add state to track admin status
   const router = useRouter();
 
-  // Note: No useEffect needed here for session management anymore
+  // Fetch user and check role when session changes
+  useEffect(() => {
+    const checkAdminStatus = async () => {
+      if (session) {
+        // Use getUser to get authenticated user data using the supabase client from the top level
+        const { data: { user }, error } = await supabase.auth.getUser();
+        if (user && !error) {
+          // Check user metadata for role
+          const userRole =
+            user.user_metadata?.role ||
+            user.user_metadata?.["role"] ||
+            user.app_metadata?.role ||
+            user.app_metadata?.["role"];
+          setIsAdmin(userRole === 'admin');
+        } else {
+          setIsAdmin(false);
+        }
+      } else {
+        setIsAdmin(false);
+      }
+    };
+
+    checkAdminStatus();
+  }, [session, supabase]); // Depend on session and supabase
 
   const handleSignOut = async () => {
-    const supabase = createClientComponent();
+    // Use supabase client from session context
     await supabase.auth.signOut();
     router.push('/'); // Redirect to home after sign out
   };
@@ -124,8 +149,7 @@ export function SiteHeader() {
         {/* Desktop Navigation - Center aligned */}
         <nav className="hidden flex-grow items-center justify-center space-x-1 md:flex md:space-x-6 lg:space-x-12">
           {navigationLinks.map((link) => {
-            // Determine if user is admin
-            const isAdmin = session?.user?.user_metadata?.role === 'admin';
+            // Determine if user is admin using the state
             // Determine the correct href for profile/admin link
             const profileHref = link.href === "/profile" ? (isAdmin ? "/admin" : "/profile") : link.href;
 
@@ -214,8 +238,7 @@ export function SiteHeader() {
           <div className="border-t border-gray-200 bg-white px-4 py-3 shadow-lg">
             <nav className="flex flex-col space-y-3">
               {navigationLinks.map((link) => {
-                // Determine if user is admin
-                const isAdmin = session?.user?.user_metadata?.role === 'admin';
+                // Determine if user is admin using the state
                 // Determine the correct href for profile/admin link
                 const profileHref = link.href === "/profile" ? (isAdmin ? "/admin" : "/profile") : link.href;
 

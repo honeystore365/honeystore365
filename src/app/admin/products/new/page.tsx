@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { createClientComponent } from '@/lib/supabaseClient';
+import { useSession } from '@/context/SessionProvider'; // Import useSession
 import { CustomForm } from '@/components/form';
 import { useRouter } from 'next/navigation';
 import * as z from "zod"
@@ -37,7 +37,8 @@ export default function NewProductPage() {
   useEffect(() => {
     const fetchCategories = async () => {
       setLoadingCategories(true);
-      const supabaseClient = createClientComponent(); // Use client component
+      // Use supabase client from session context
+      const { supabase: supabaseClient } = useSession();
       const { data, error } = await supabaseClient
         .from('categories')
         .select('id, name') // Select only id and name
@@ -61,7 +62,8 @@ export default function NewProductPage() {
     setLoading(true);
     setError('');
 
-    const supabase = createClientComponent();
+    // Use supabase client from session context
+    const { supabase } = useSession();
     
     // Handle image upload if file exists
     let imageUrl = values.image_url;

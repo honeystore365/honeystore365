@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { createClientComponent } from '@/lib/supabaseClient';
+import { useSession } from '@/context/SessionProvider'; // Import useSession
 import { DataTable } from '@/components/data-table';
 import { ColumnDef } from '@tanstack/react-table';
 import { Button } from '@/components/ui/button';
@@ -36,13 +36,15 @@ export default function CustomersPage() {
   const [editError, setEditError] = useState<string | null>(null);
   const [editSuccess, setEditSuccess] = useState<boolean>(false);
 
+  const { supabase } = useSession(); // Move useSession here
+
   // Fetch non-admin customers using RPC function
-  const fetchCustomers = useCallback(async () => {
+  const fetchCustomers = useCallback(async (supabaseClient: any) => { // Accept supabase as argument
     console.log("CustomersPage: Fetching non-admin customers...");
     setLoading(true);
     setError(null);
-    const supabase = createClientComponent();
-    const { data, error: rpcError } = await supabase.rpc('get_non_admin_customers');
+    // Use supabase client from session context
+    const { data, error: rpcError } = await supabaseClient.rpc('get_non_admin_customers'); // Use the argument
 
     if (rpcError) {
       console.error('CustomersPage: Error fetching non-admin customers:', rpcError);
@@ -53,11 +55,11 @@ export default function CustomersPage() {
       setCustomers((data as Customer[]) || []);
     }
     setLoading(false);
-  }, []);
+  }, [supabase]); // Add supabase to dependency array
 
   useEffect(() => {
-    fetchCustomers();
-  }, [fetchCustomers]);
+    fetchCustomers(supabase); // Pass supabase to fetchCustomers
+  }, [fetchCustomers, supabase]); // Add supabase to dependency array
 
   // Handler for updating customer - Using FormData
   const handleUpdateCustomer = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -85,8 +87,8 @@ export default function CustomersPage() {
 
     console.log(`Attempting to update customer ${editingCustomer.id} with:`, updatedData); // Log actual data
 
-    const supabase = createClientComponent();
-    const { data: updatedCustomerData, error: updateError } = await supabase
+    // Use supabase client from session context
+    const { data: updatedCustomerData, error: updateError } = await supabase // Use supabase from outer scope
         .from('customers')
         .update(updatedData) // Use actual form data
         .eq('id', editingCustomer.id)
@@ -145,8 +147,8 @@ export default function CustomersPage() {
 
         const handleDelete = async () => {
           setIsDeleting(true);
-          const supabase = createClientComponent();
-          const { error: deleteError } = await supabase
+          // Use supabase client from session context
+          const { error: deleteError } = await supabase // Use supabase from outer scope
             .from('customers')
             .delete()
             .eq('id', customer.id);
@@ -157,8 +159,20 @@ export default function CustomersPage() {
             setIsDeleting(false);
             return false;
           }
-          await fetchCustomers(); // Refresh list
+
+          // Also delete the user from auth.users
+          const { error: authDeleteError } = await supabase.auth.admin.deleteUser(customer.id);
+
+          if (authDeleteError) {
+            console.error('Error deleting auth user:', authDeleteError);
+            alert(`Error deleting auth user: ${authDeleteError.message}`);
+            setIsDeleting(false);
+            return false; // Indicate failure
+          }
+
+          await fetchCustomers(supabase); // Refresh list
           setIsDeleting(false);
+          console.log('Customer and auth user deleted successfully.'); // Log success
           return true;
         };
 

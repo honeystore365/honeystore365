@@ -30,7 +30,7 @@ interface Customer {
 
 // Placeholder for a client component to handle profile editing if needed later
 // For now, we'll keep profile display simple within the server component.
-// import ProfileEditor from './ProfileEditorClient'; 
+import ProfileForm from '@/components/ProfileForm'; // Import the new form component
 
 export default async function ProfilePage() {
   const supabase = await createClientServer();
@@ -53,64 +53,75 @@ export default async function ProfilePage() {
   const { data: customer, error: customerError } = await supabase
     .from('customers')
     .select('id, first_name, last_name, email, created_at')
-    .eq('id', user.id)
+    .eq('id', user.id) // customer.id is the same as user.id
     .single<Customer>();
-  
-  // Fetch products
+
+  // Fetch address data for the customer
+  // Assuming customer.id is the foreign key in the addresses table
+  const { data: address, error: addressError } = await supabase
+    .from('addresses')
+    .select('*')
+    .eq('customer_id', user.id) // user.id is the customer_id for their address
+    .limit(1) // Get the first address, assuming one primary or most recent
+    .single(); // Use single if you expect one or zero, or remove if multiple are possible
+
+  // Fetch products (remains the same)
   const { data: products, error: productsError } = await supabase
     .from('products')
     .select('id, name, description, price, image_url');
 
   if (profileError) {
-    console.error('Error fetching profile data:', profileError.message);
-    // Potentially redirect or show a specific error message for profile
+    console.error('Error fetching profile (profiles table) data:', profileError.message);
   }
   if (customerError) {
-    console.error('Error fetching customer data:', customerError.message);
-    // Potentially redirect or show a specific error message for customer
+    console.error('Error fetching customer (customers table) data:', customerError.message);
+  }
+  if (addressError && addressError.code !== 'PGRST116') { // PGRST116 means no rows found, which is okay
+    console.error('Error fetching address data:', addressError.message);
   }
   if (productsError) {
     console.error('Error fetching products:', productsError);
-    // Optionally, render an error message to the user for products
   }
 
-  // Basic loading/error state for critical data
-  if (!user) {
+  if (!user) { // Should have been caught by redirect earlier, but good check
     return <div className="container mx-auto py-10 text-center">Authenticating...</div>;
   }
-  // If profile or customer doesn't exist, it might be an issue or first-time setup.
-  // For now, we'll proceed, but in a real app, you might want to guide the user.
+
+  // If customer record doesn't exist, it means it's a new user who hasn't filled out customer details.
+  // The ProfileForm will handle creating the customer record via the server action.
+  const customerDataForForm = customer || { id: user.id, email: user.email, first_name: null, last_name: null };
+  const addressDataForForm = address || null;
+
 
   return (
     <div className="container mx-auto py-10">
       <h1 className="text-3xl font-bold mb-8 text-center">
-        حسابي وصفحة المنتجات
+        ملفي الشخصي وإدارة العنوان
       </h1>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Profile and Orders Section (Left/Top on mobile) */}
         <div className="lg:col-span-1 space-y-8">
-          <div>
+          {/* Render the ProfileForm for editing/creating profile info */}
+          <ProfileForm customer={customerDataForForm} address={addressDataForForm} />
+          
+          {/* Display existing profile info (optional, could be part of ProfileForm or separate) */}
+          {/* This section can be removed or adapted if ProfileForm handles all display */}
+          <div className="mt-8">
             <h2 className="text-2xl font-semibold mb-4">
-              معلومات الملف الشخصي
+              المعلومات الحالية (للعرض)
             </h2>
-            <div className="bg-white shadow-md rounded-xl p-6 space-y-3">
-              <p><strong>اسم المستخدم:</strong> {profile?.username || 'غير متوفر'}</p>
-              <p><strong>الموقع الإلكتروني:</strong> {profile?.website || 'غير متوفر'}</p>
-              <p><strong>الاسم الأول:</strong> {customer?.first_name || 'غير متوفر'}</p>
-              <p><strong>الاسم الأخير:</strong> {customer?.last_name || 'غير متوفر'}</p>
+            <div className="bg-gray-100 shadow-md rounded-xl p-6 space-y-3">
+              <p><strong>اسم المستخدم (من profiles):</strong> {profile?.username || 'غير متوفر'}</p>
+              <p><strong>الاسم الأول (من customers):</strong> {customer?.first_name || 'غير متوفر'}</p>
+              <p><strong>اسم العائلة (من customers):</strong> {customer?.last_name || 'غير متوفر'}</p>
               <p><strong>البريد الإلكتروني:</strong> {customer?.email || user.email}</p>
-              {/* Add Edit Profile Button here if needed, linking to a separate edit page or modal */}
-              {/* 
-                <Button asChild className="mt-4 w-full">
-                  <Link href="/profile/edit">تعديل الملف الشخصي</Link>
-                </Button> 
-              */}
+              <p><strong>العنوان:</strong> {address?.address_line_1 || 'غير متوفر'}</p>
+              <p><strong>الهاتف:</strong> {address?.phone_number || 'غير متوفر'}</p>
             </div>
           </div>
 
           <div>
-            <h2 className="text-2xl font-semibold mb-4">
+            <h2 className="text-2xl font-semibold mb-4 mt-8">
               سجل الطلبات
             </h2>
             <div className="bg-white shadow-md rounded-xl p-6">

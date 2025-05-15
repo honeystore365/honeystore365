@@ -1,10 +1,10 @@
-// src/app/admin/categories/page.tsx
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            // src/app/admin/categories/page.tsx
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
 // Assurez-vous que '@/lib/supabaseClient' initialise un client Supabase
 // adapté à l'utilisation côté client dans un composant 'use client'.
-import { createClientComponent } from '@/lib/supabaseClient';
+import { useSession } from '@/context/SessionProvider'; // Import useSession
 import { DataTable } from '@/components/data-table'; // Assurez-vous que ce composant existe
 // import AdminLayout from '../layout'; // Commenté si le layout est géré au niveau du dossier
 import { Button } from '@/components/ui/button'; // Assurez-vous que ce composant existe
@@ -57,12 +57,14 @@ export default function CategoriesPage() {
   const formRef = useRef<HTMLFormElement>(null); // Ref for add form
   const editFormRef = useRef<HTMLFormElement>(null); // Ref for edit form
 
-  // Fonction pour récupérer les catégories
-  const fetchCategories = async () => {
-    setLoading(true);
+ const { supabase } = useSession(); // Move useSession here
+
+// Fonction pour récupérer les catégories
+const fetchCategories = async (supabaseClient: any) => { // Accept supabase as argument
+setLoading(true);
 // Vérifiez si supabase est correctement initialisé pour le client ici si nécessaire
-const supabase = createClientComponent();
-const { data, error } = await supabase
+// Use supabase client from session context
+const { data, error } = await supabaseClient // Use the argument
 .from('categories')
 .select('*')
 .order('created_at', { ascending: false }); // Optionnel: trier par date de création
@@ -72,19 +74,19 @@ console.log('Fetch categories result - error:', error);
 
 if (error) {
 console.error('Error fetching categories:', error);
-      setError(error.message);
-      setCategories([]);
-    } else {
-      setCategories(data as Category[]);
-      setError(null);
-    }
-    setLoading(false);
-  };
+setError(error.message);
+setCategories([]);
+} else {
+setCategories(data as Category[]);
+setError(null);
+}
+setLoading(false);
+};
 
-  // Exécuter la récupération au montage du composant
-  useEffect(() => {
-    fetchCategories();
-  }, []); // Le tableau vide assure que cela ne s'exécute qu'une fois au montage
+// Exécuter la récupération au montage du composant
+useEffect(() => {
+fetchCategories(supabase); // Pass supabase to fetchCategories
+}, [supabase]); // Add supabase to dependency array
 
   // Define columns inside the component to access fetchCategories
   const categoryColumns = [
@@ -107,8 +109,8 @@ console.error('Error fetching categories:', error);
 
         const handleDelete = async () => {
           setIsDeleting(true);
-          const supabase = createClientComponent();
-          const { error: deleteError } = await supabase
+          // Use supabase client from session context
+          const { error: deleteError } = await supabase // Use supabase from outer scope
             .from('categories')
             .delete()
             .eq('id', category.id);
@@ -122,7 +124,7 @@ console.error('Error fetching categories:', error);
           }
 
           // Refresh the category list
-          await fetchCategories(); // Call fetchCategories from parent scope
+          await fetchCategories(supabase); // Pass supabase to fetchCategories
           setIsDeleting(false);
           return true; // Indicate success
         };
@@ -202,8 +204,8 @@ console.error('Error fetching categories:', error);
         return;
     }
 
-    const supabase = createClientComponent();
-    const { error: updateError } = await supabase
+    // Use supabase client from session context
+    const { error: updateError } = await supabase // Use supabase from outer scope
       .from('categories')
       .update({ name: name.trim(), description: description?.trim() || null })
       .eq('id', editingCategory.id);
@@ -219,7 +221,7 @@ console.error('Error fetching categories:', error);
       setIsEditDialogOpen(false);
       setEditingCategory(null);
       setAddSuccess(false); // Reset success state
-      fetchCategories();
+      fetchCategories(supabase); // Pass supabase to fetchCategories
     }
 
     setIsSubmitting(false);

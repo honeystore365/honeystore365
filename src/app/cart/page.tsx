@@ -2,6 +2,7 @@ import { getCartItems } from '@/actions/cartActions';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import CartDisplayClient from '@/components/CartDisplayClient'; // Import the main client component
+import PdfList from '@/components/PdfList';
 
 export const dynamic = 'force-dynamic'; // Ensure fresh data on each request
 
@@ -22,9 +23,14 @@ interface CartPageItem {
 }
 
 export default async function CartPage() {
+  console.log('[CartPage] Fetching cart items...');
   const { items, total, error: cartError } = await getCartItems();
+  console.log('[CartPage] Fetched cart items:', items);
+  console.log('[CartPage] Fetched cart total:', total);
+  console.log('[CartPage] Cart fetch error:', cartError);
 
   if (cartError) {
+    console.error('[CartPage] Error fetching cart:', cartError);
     return (
       <div className="container mx-auto py-10 px-4 text-center">
         <h1 className="text-3xl font-bold mb-8 text-destructive">خطأ في تحميل السلة</h1>
@@ -37,6 +43,7 @@ export default async function CartPage() {
   }
 
   if (!items || items.length === 0) {
+    console.log('[CartPage] Cart is empty.');
     return (
       <div className="container mx-auto py-10 px-4 text-center">
         <h1 className="text-3xl font-bold mb-8 text-honey-dark">سلة التسوق فارغة</h1>
@@ -50,6 +57,7 @@ export default async function CartPage() {
     );
   }
 
+  console.log('[CartPage] Rendering CartDisplayClient with items and total.');
   return (
     <div className="container mx-auto py-10 px-4">
       <h1 className="text-4xl font-extrabold mb-10 text-center text-honey-dark tracking-tight">
@@ -57,6 +65,7 @@ export default async function CartPage() {
       </h1>
       {/* Delegate rendering and client-side state management to CartDisplayClient */}
       <CartDisplayClient initialItems={items} initialTotal={total} />
+      <PdfList />
     </div>
   );
 }

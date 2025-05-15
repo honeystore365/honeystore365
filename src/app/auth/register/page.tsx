@@ -2,7 +2,7 @@
 'use client';
 
 import { useState } from 'react';
-import { supabase } from '@/lib/supabaseClient';
+import { useSession } from '@/context/SessionProvider'; // Import useSession
 import { useRouter } from 'next/navigation';
 
 export default function RegisterPage() {
@@ -22,7 +22,9 @@ export default function RegisterPage() {
       setError('Passwords do not match.');
       return;
     }
-
+ 
+    // Use supabase client from session context
+    const { supabase } = useSession();
     const { data, error: authError } = await supabase.auth.signUp({
       email,
       password,

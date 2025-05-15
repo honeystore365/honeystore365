@@ -4,9 +4,12 @@ import React, { createContext, useState, useEffect, useContext, ReactNode } from
 import type { Session } from '@supabase/supabase-js';
 import { createClientComponent } from '@/lib/supabaseClient'; // Use client component client
 
+import { SupabaseClient } from '@supabase/supabase-js';
+
 type SessionContextType = {
   session: Session | null;
   loading: boolean;
+  supabase: SupabaseClient; // Add supabase client to context type
 };
 
 const SessionContext = createContext<SessionContextType | undefined>(undefined);
@@ -71,7 +74,7 @@ export function SessionProvider({ children, serverSession }: SessionProviderProp
     };
   }, [supabase.auth, serverSession]); // Add serverSession to dependencies
 
-  const value = { session, loading };
+  const value = { session, loading, supabase }; // Include supabase in the context value
 
   return (
     <SessionContext.Provider value={value}>

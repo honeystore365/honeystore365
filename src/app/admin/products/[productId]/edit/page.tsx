@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { createClientComponent } from '@/lib/supabaseClient'; // Changed import
+import { useSession } from '@/context/SessionProvider'; // Import useSession
 import { CustomForm } from '@/components/form';
 import { useRouter } from 'next/navigation';
 import { useParams } from 'next/navigation';
@@ -48,7 +48,8 @@ export default function EditProductPage() {
     setLoadingCategories(true);
     setError('');
     setCategoryError(null);
-    const supabaseClient = createClientComponent();
+    // Use supabase client from session context
+    const { supabase: supabaseClient } = useSession();
 
     // Fetch Product with its categories
     const { data: productData, error: productError } = await supabaseClient
@@ -92,7 +93,8 @@ export default function EditProductPage() {
   const handleSubmit = async (values: z.infer<typeof productSchema>) => {
     setLoading(true);
     setError('');
-    const supabaseClient = createClientComponent();
+    // Use supabase client from session context
+    const { supabase: supabaseClient } = useSession();
 
     // 1. Handle image upload (similar to new product page)
     let imageUrl = product?.image_url; // Start with existing image URL

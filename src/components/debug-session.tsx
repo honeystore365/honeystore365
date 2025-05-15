@@ -1,12 +1,14 @@
 "use client";
 
 import { useEffect } from 'react';
-import { createClientComponent } from '@/lib/supabaseClient';
+import { useSession } from '@/context/SessionProvider'; // Import useSession
+ 
+ export function DebugSession() {
+  const { supabase } = useSession(); // Call useSession at the top level
 
-export function DebugSession() {
   useEffect(() => {
     const fetchSession = async () => {
-      const supabase = createClientComponent();
+      // Use the supabase client obtained outside
       const { data: { session }, error } = await supabase.auth.getSession();
       console.log('Client Session:', session);
       if (error) {
@@ -14,7 +16,7 @@ export function DebugSession() {
       }
     };
     fetchSession();
-  }, []);
+  }, [supabase]); // Add supabase to dependencies
 
   return null;
 }

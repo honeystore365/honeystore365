@@ -2,7 +2,7 @@
 // Ce fichier a été déplacé dans src/app/admin/products/page.tsx
 
 import { useState, useEffect, useCallback } from 'react';
-import { createClientComponent } from '@/lib/supabaseClient';
+import { useSession } from '@/context/SessionProvider'; // Import useSession
 import { DataTable } from '@/components/data-table';
 import Link from 'next/link'; // Import Link
 import { Button } from '@/components/ui/button'; // Import Button
@@ -28,10 +28,12 @@ export default function ProductsPage() {
   const [error, setError] = useState<string | null>(null);
   const [refreshKey, setRefreshKey] = useState(0); // Add refreshKey state
 
-  const fetchProducts = useCallback(async () => {
+  const { supabase } = useSession(); // Move useSession here
+
+  const fetchProducts = useCallback(async (supabaseClient: any) => { // Accept supabase as argument
     setLoading(true);
-    const supabase = createClientComponent();
-    const { data, error: fetchError } = await supabase
+    // Use supabase client from session context
+    const { data, error: fetchError } = await supabaseClient // Use the argument
       .from('products')
       .select('id, name, description, price, stock, created_at, image_url');
 
@@ -44,11 +46,11 @@ export default function ProductsPage() {
       setError(null);
     }
     setLoading(false);
-  }, []); // No dependencies needed if createClientComponent is stable
+  }, [supabase]); // Add supabase to dependency array
 
   useEffect(() => {
-    fetchProducts();
-  }, [fetchProducts, refreshKey]); // Add refreshKey to dependency array
+    fetchProducts(supabase); // Pass supabase to fetchProducts
+  }, [fetchProducts, refreshKey, supabase]); // Add supabase to dependency array
 
   // Define productColumns inside the component to access fetchProducts
   const productColumns = [
@@ -91,8 +93,8 @@ export default function ProductsPage() {
 
       const handleDelete = async () => {
         setIsDeleting(true);
-        const supabase = createClientComponent();
-        const { error } = await supabase
+        // Use supabase client from session context
+        const { error } = await supabase // Use supabase from outer scope
           .from('products')
           .delete()
           .eq('id', product.id);
