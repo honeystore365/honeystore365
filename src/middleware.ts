@@ -1,4 +1,4 @@
-import { createMiddlewareClient } from '@supabase/ssr'
+import { createClient } from '@supabase/supabase-js'
 import { NextResponse, type NextRequest } from 'next/server'
 
 export async function middleware(request: NextRequest) {
@@ -10,12 +10,50 @@ export async function middleware(request: NextRequest) {
       },
     })
 
-    const supabase = createMiddlewareClient({ req: request, res: response })
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          get: (name: string) => request.cookies.get(name)?.value,
+          set: (name: string, value: string, options: any) => {
+            request.cookies.set({
+              name,
+              value,
+              ...options,
+            })
+            response = NextResponse.next({
+              request,
+            })
+            response.cookies.set({
+              name,
+              value,
+              ...options,
+            })
+          },
+          remove: (name: string, options: any) => {
+            request.cookies.set({
+              name,
+              value: '',
+              ...options,
+            })
+            response = NextResponse.next({
+              request,
+            })
+            response.cookies.set({
+              name,
+              value: '',
+              ...options,
+            })
+          },
+        },
+      }
+    )
 
     // This will refresh session if expired - otherwise just update the cookies
     await supabase.auth.getSession()
 
-    // Do not run code between createMiddlewareClient and
+    // Do not run code between createClient and
     // supabase.auth.getSession(). A simple mistake could make it very hard to debug
     // issues with users being randomly logged out.
 
@@ -44,12 +82,12 @@ export async function middleware(request: NextRequest) {
       }
     }
 
-    // IMPORTANT: You *must* return the supabaseResponse object as it is.
+    // IMPORTANT: You *must* return the response object as it is.
     // If you're creating a new response object with NextResponse.next() make sure to:
     // 1. Pass the request in it, like so:
     //    const myNewResponse = NextResponse.next({ request })
     // 2. Copy over the cookies, like so:
-    //    myNewResponse.cookies.setAll(supabaseResponse.cookies.getAll())
+    //    myNewResponse.cookies.setAll(response.cookies.getAll())
     // 3. Change the myNewResponse object to fit your needs, but avoid changing
     //    the cookies!
     // 4. Finally:
@@ -57,7 +95,7 @@ export async function middleware(request: NextRequest) {
     // If this is not done, you may be causing the browser and server to go out
     // of sync and terminate the user's session prematurely!
 
-    return supabaseResponse
+    return response
   } catch (err) {
     console.error("Middleware error:", err);
     return new NextResponse("Internal middleware error", { status: 500 });
