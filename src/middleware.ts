@@ -19,7 +19,7 @@ export async function middleware(request: NextRequest) {
     )
 
     // This will refresh session if expired - otherwise just update the cookies
-    await supabase.auth.getSession()
+    await (supabase.auth as any).getSession()
 
     // Do not run code between createClient and
     // supabase.auth.getSession(). A simple mistake could make it very hard to debug
@@ -29,7 +29,7 @@ export async function middleware(request: NextRequest) {
 
     const {
       data: { user },
-    } = await supabase.auth.getUser()
+    } = await (supabase.auth as any).getUser()
 
     // Check if the user is authenticated and has the 'admin' role
     const userRole =
