@@ -1,4 +1,4 @@
-import { createServerClient } from '@supabase/ssr'
+import { createClient } from '@supabase/supabase-js'
 import { NextResponse, type NextRequest } from 'next/server'
 
 export async function middleware(request: NextRequest) {
@@ -7,24 +7,25 @@ export async function middleware(request: NextRequest) {
       request,
     })
 
-    const supabase = createServerClient(
+    const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
       {
-        cookies: {
-          getAll() {
-            return request.cookies.getAll()
-          },
-          setAll(cookiesToSet) {
-            cookiesToSet.forEach(({ name, value, options }) =>
-              supabaseResponse.cookies.set(name, value, options)
-            );
+        auth: {
+          storage: {
+            getItem: (key) => request.cookies.get(key)?.value || null,
+            setItem: (key, value) => {
+              supabaseResponse.cookies.set(key, value);
+            },
+            removeItem: (key) => {
+              supabaseResponse.cookies.delete(key);
+            },
           },
         },
       }
     )
 
-    // Do not run code between createServerClient and
+    // Do not run code between createClient and
     // supabase.auth.getUser(). A simple mistake could make it very hard to debug
     // issues with users being randomly logged out.
 
