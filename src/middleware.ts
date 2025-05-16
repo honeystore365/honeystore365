@@ -1,12 +1,20 @@
-import { createMiddlewareClient } from '@supabase/ssr'
+import { updateSession } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
+import { createClient } from '@supabase/supabase-js'
 
 export async function middleware(request: NextRequest) {
-  const response = NextResponse.next()
+  // Update the session and get the modified response
+  const response = await updateSession(request)
 
   try {
-    const supabase = createMiddlewareClient({ req: request, res: response })
+    // Create a Supabase client (assuming updateSession makes cookies available)
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+      // No cookies object here
+    )
 
+    // Now get the user using the client
     const {
       data: { user },
     } = await supabase.auth.getUser()
@@ -27,8 +35,4 @@ export async function middleware(request: NextRequest) {
     console.error("Middleware error:", err)
     return new NextResponse("Internal middleware error", { status: 500 })
   }
-}
-
-export const config = {
-  matcher: ['/admin/:path*'], // Ajoute d'autres routes à sécuriser ici
 }
