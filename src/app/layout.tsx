@@ -47,6 +47,9 @@ export default async function RootLayout({
 
   return (
     <html lang="ar" dir="rtl">
+      <head>
+        <link rel="icon" href="/favicon.png" type="image/png" />
+      </head>
       <body className="min-h-screen bg-honey-light text-foreground antialiased">
         {/* Wrap content with SessionProvider, passing the server session */}
         <SessionProvider serverSession={session}>
