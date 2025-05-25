@@ -6,7 +6,7 @@ import {Toaster} from '@/components/ui/toaster';
 import { ChatbotPopup } from '@/components/chatbot-popup';
 import { DebugSession } from '@/components/debug-session';
 import { DebugCookies } from '@/components/debug-cookies';
-import { createClientServer } from '@/lib/supabaseClientServer'; // Import server client
+import { createClientServerReadOnly } from '@/lib/supabaseServerReadOnly'; // Import read-only server client
 import { SessionProvider } from '@/context/SessionProvider'; // Import SessionProvider
 
 export const metadata: Metadata = {
@@ -35,7 +35,7 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   // Fetch and validate session on the server
-  const supabase = await createClientServer();
+  const supabase = await createClientServerReadOnly();
   const { data: { user } } = await supabase.auth.getUser(); // Validate user first
   let session = null;
   if (user) {

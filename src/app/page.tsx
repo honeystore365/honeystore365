@@ -1,5 +1,5 @@
 import Image from 'next/image';
-import { createClientServer } from '@/lib/supabaseClientServer';
+import { createClientServerReadOnly } from '@/lib/supabaseServerReadOnly';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 
@@ -14,7 +14,7 @@ interface Product {
 
 export default async function Home() {
   // Fetch products server-side
-  const supabase = await createClientServer();
+  const supabase = await createClientServerReadOnly();
   const { data: products, error } = await supabase
     .from('products')
     .select('id, name, description, price, image_url')
@@ -22,8 +22,18 @@ export default async function Home() {
     .limit(6); // Limit to 6 products for the main page
 
   if (error) {
-    console.error("Error fetching products for main page:", error);
+    console.error("Error fetching products for main page:", JSON.stringify(error, null, 2));
     // Optionally return an error state or fallback UI
+    return (
+      <div className="container mx-auto py-10 text-center">
+        <h2 className="text-4xl font-bold mb-12 text-center">
+          منتجاتنا المميزة
+        </h2>
+        <p className="text-red-500">
+          حدث خطأ أثناء تحميل المنتجات. يرجى المحاولة مرة أخرى لاحقاً.
+        </p>
+      </div>
+    );
   }
 
   return (
