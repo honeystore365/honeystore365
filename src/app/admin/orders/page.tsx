@@ -46,7 +46,7 @@ export default function OrdersPage() {
 ;
 
     if (ordersError) {
-      console.error('Error fetching orders:', ordersError);
+      console.error('Error fetching orders:', ordersError.message || JSON.stringify(ordersError));
     } else {
       setOrders(ordersData || []);
     }
@@ -99,13 +99,14 @@ export default function OrdersPage() {
               .from('addresses')
               .select('*')
               .eq('id', addressId)
-              .single();
+              .limit(1); // Use limit(1) instead of single() to handle cases where no row is found gracefully
 
             if (error) {
-              console.error(`Error fetching address for ID ${addressId}:`, error);
+              console.error(`Error fetching address for ID ${addressId}:`, error.message || JSON.stringify(error));
               setAddress(null);
             } else {
-              setAddress(data as AddressWithPhone);
+              // If data is an array, take the first element, otherwise null
+              setAddress(data && data.length > 0 ? data[0] as AddressWithPhone : null);
             }
             setLoadingAddress(false);
           };

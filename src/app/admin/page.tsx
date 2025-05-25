@@ -37,6 +37,7 @@ interface Order {
   total_amount?: number; // Use actual column name
   status?: string; // Assuming status column exists
   customers: { first_name: string | null; last_name: string | null }[] | null; // Include customer names, returned as array by Supabase
+  shipping_address: { phone_number: string | null } | null; // Include phone number from shipping address
 }
 
 function RecentOrdersTable({ orders }: { orders: Order[] }) {
@@ -50,14 +51,21 @@ function RecentOrdersTable({ orders }: { orders: Order[] }) {
       <div className="overflow-x-auto">
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
-            <tr><th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">#</th>{/* Sequential Order Number */}<th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">معرف الطلب</th><th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">التاريخ</th><th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">العميل</th><th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">المجموع</th><th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">الحالة</th></tr>
+            <tr>
+              <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">#</th>{/* Sequential Order Number */}
+              <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">معرف الطلب</th>
+              <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">التاريخ</th>
+              <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">العميل</th>
+              <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">رقم الهاتف</th> {/* New column for phone number */}
+              <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">المجموع</th>
+              <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">الحالة</th>
+            </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
             {orders.map((order, index) => {
               console.log(`Order ${order.id} data:`, order); // Add this log
               return (
-              <tr key={order.id}>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 text-right">{index + 1}</td> {/* Sequential Order Number */}
+              <tr key={order.id}><td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 text-right">{index + 1}</td> {/* Sequential Order Number */}
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 text-right">{order.id}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">
                   {new Date(order.order_date).toLocaleDateString()} {/* Use order_date */}
@@ -65,6 +73,9 @@ function RecentOrdersTable({ orders }: { orders: Order[] }) {
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">
                   {/* Display customer name from the first element of the customers array */}
                   {order.customers && order.customers.length > 0 ? `${order.customers[0].first_name || ''} ${order.customers[0].last_name || ''}`.trim() : 'N/A'}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">
+                  {order.shipping_address?.phone_number || 'N/A'}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">{order.total_amount !== undefined ? `$${order.total_amount.toFixed(2)}` : 'N/A'}</td> {/* Use total_amount */}
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">
@@ -120,7 +131,7 @@ export default async function AdminPage() {
    // Commandes Récentes (Exemple: 5 dernières) - Use correct columns
    const { data: recentOrders, error: recentOrdersError } = await supabase
    .from('orders')
-   .select('id, order_date, customer_id, total_amount, status, customers(first_name, last_name)') // Select customer names
+   .select('id, order_date, customer_id, total_amount, status, customers(first_name, last_name), shipping_address:addresses(phone_number)') // Select customer names and phone number from shipping address
    .order('order_date', { ascending: true }) // Order by date ascending
    .limit(5);
 
