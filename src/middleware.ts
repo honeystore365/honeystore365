@@ -7,22 +7,9 @@ export async function middleware(request: NextRequest) {
   const supabase = createMiddlewareClient({ req: request, res })
 
   try {
-    // Alternative pour les versions très récentes de Supabase
-    // const { data: { user }, error } = await supabase.auth.getUser()
+    // Rafraîchir la session pour s'assurer qu'elle est valide
+    const { data: { session } } = await supabase.auth.refreshSession()
     
-    // Ou utiliser getSession() (recommandé)
-    const { data: { session }, error } = await supabase.auth.getSession()
-    
-    if (error) {
-      console.error('Erreur lors de la récupération de la session:', error)
-      // Rediriger vers la page de connexion en cas d'erreur
-      if (request.nextUrl.pathname.startsWith('/dashboard') || 
-          request.nextUrl.pathname.startsWith('/admin')) {
-        return NextResponse.redirect(new URL('/login', request.url))
-      }
-      return res
-    }
-
     const user = session?.user
     const isLoggedIn = !!user
     const isOnAuthPage = request.nextUrl.pathname === '/login' || 
@@ -43,6 +30,14 @@ export async function middleware(request: NextRequest) {
     return res
   } catch (error) {
     console.error('Erreur dans le middleware:', error)
+    // En cas d'erreur, rediriger vers login si sur une page protégée
+    const isOnProtectedPage = request.nextUrl.pathname.startsWith('/dashboard') || 
+                             request.nextUrl.pathname.startsWith('/admin')
+    
+    if (isOnProtectedPage) {
+      return NextResponse.redirect(new URL('/login', request.url))
+    }
+    
     return res
   }
 }
