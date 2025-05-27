@@ -38,3 +38,8 @@ yarn-error.log*
 next-env.d.ts
 
 .genkit/*
+
+# IDE / Local development specific
+.idx/
+.roo/
+.vscode/
