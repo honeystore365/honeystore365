@@ -1,39 +1,43 @@
-import { NextResponse } from 'next/server'
-import type { NextRequest } from 'next/server'
+import { type NextRequest, NextResponse } from 'next/server'
+import { updateSession } from './lib/supabase/middleware' // Adjusted path
+import { createServerClient } from '@supabase/ssr'
 
 export async function middleware(request: NextRequest) {
-  // Récupérer le token depuis les cookies
-  const token = request.cookies.get('sb-access-token')?.value || 
-                request.cookies.get('supabase-auth-token')?.value
+  const response = await updateSession(request)
 
-  const isLoggedIn = !!token
-  const isOnAuthPage = request.nextUrl.pathname === '/login' || 
-                      request.nextUrl.pathname === '/register'
-  const isOnProtectedPage = request.nextUrl.pathname.startsWith('/dashboard') || 
-                           request.nextUrl.pathname.startsWith('/admin')
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        get(name: string) {
+          return request.cookies.get(name)?.value
+        },
+      },
+    }
+  )
 
-  // Si l'utilisateur est connecté et sur une page d'auth, rediriger vers dashboard
+  const { data: { user } } = await supabase.auth.getUser()
+
+  const isLoggedIn = !!user
+  const isOnAuthPage = request.nextUrl.pathname.startsWith('/auth/login') ||
+                      request.nextUrl.pathname.startsWith('/auth/register')
+  
+  const isOnAdminPage = request.nextUrl.pathname.startsWith('/admin')
+
   if (isLoggedIn && isOnAuthPage) {
-    return NextResponse.redirect(new URL('/dashboard', request.url))
+    return NextResponse.redirect(new URL('/', request.url))
   }
 
-  // Si l'utilisateur n'est pas connecté et sur une page protégée, rediriger vers login
-  if (!isLoggedIn && isOnProtectedPage) {
-    return NextResponse.redirect(new URL('/login', request.url))
+  if (!isLoggedIn && isOnAdminPage) {
+    return NextResponse.redirect(new URL('/auth/login', request.url))
   }
 
-  return NextResponse.next()
+  return response
 }
 
 export const config = {
   matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - api (API routes)
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     */
-    '/((?!api|_next/static|_next/image|favicon.ico).*)',
+    '/((?!api|_next/static|_next/image|favicon.ico|.*\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 }
