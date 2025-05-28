@@ -20,6 +20,7 @@ export async function middleware(request: NextRequest) {
           );
         },
       },
+      cookieEncoding: 'base64url', // Ensure base64url encoding for Supabase session cookies
     }
   )
 

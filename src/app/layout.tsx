@@ -38,18 +38,17 @@ export default async function RootLayout({
   const supabase = await createClientServer();
   const { data: { user } } = await supabase.auth.getUser(); // Validate user first
   let session = null;
-  if (user) {
-    // If user is validated, get the full session object
-    const { data: sessionData } = await supabase.auth.getSession();
+
+  const { data: sessionData } = await supabase.auth.getSession();
+  if (sessionData.session) {
     session = sessionData.session;
   }
-  // Note: error handling might be needed
 
   return (
     <html lang="ar" dir="rtl">
       <body className="min-h-screen bg-honey-light text-foreground antialiased">
-        {/* Wrap content with SessionProvider, passing the server session */}
-        <SessionProvider serverSession={session}>
+        {/* Wrap content with SessionProvider, passing the server session and user */}
+        <SessionProvider serverSession={session} serverUser={user}>
           <DebugSession /> {/* Debug components can remain */}
           <DebugCookies />
           <SidebarProvider>

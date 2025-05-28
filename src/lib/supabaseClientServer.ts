@@ -1,4 +1,4 @@
-import { createServerClient } from '@supabase/ssr';
+import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 
 type KeyType = 'anon' | 'service_role';
@@ -21,9 +21,16 @@ export const createClientServer = async (keyType: KeyType = 'anon') => {
         getAll() {
           return cookieStore.getAll();
         },
-        setAll(cookiesToSet) {
+        setAll(cookiesToSet: { name: string; value: string; options: CookieOptions }[]) {
           cookiesToSet.forEach(({ name, value, options }) => cookieStore.set(name, value, options));
         },
+      },
+      cookieEncoding: 'base64url', // Use 'base64url' encoding for Supabase session cookies
+      cookieOptions: {
+        // You can add default cookie options here if needed
+        // For example:
+        // secure: process.env.NODE_ENV === 'production',
+        // sameSite: 'lax',
       },
     }
   );

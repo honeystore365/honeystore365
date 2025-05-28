@@ -19,7 +19,7 @@ interface CustomerInfo {
 
 interface Order {
   id: string;
-  customer_id: string;
+  customer_id: string | null;
   total_amount: number;
   order_date: string; // Change from created_at to order_date
   customers: CustomerInfo | null;

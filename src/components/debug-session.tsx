@@ -9,8 +9,8 @@ import { useSession } from '@/context/SessionProvider'; // Import useSession
   useEffect(() => {
     const fetchSession = async () => {
       // Use the supabase client obtained outside
-      const { data: { session }, error } = await supabase.auth.getSession();
-      console.log('Client Session:', session);
+      const { data: { user }, error } = await supabase.auth.getUser();
+      console.log('Client User:', user);
       if (error) {
         console.error('Error fetching session:', error);
       }

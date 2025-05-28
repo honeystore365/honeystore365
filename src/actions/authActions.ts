@@ -22,8 +22,8 @@ export async function signIn(formData: FormData) {
   }
 
   console.log('Server Action: Sign in successful. Checking session immediately...');
-  const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-  console.log('Server Action: getSession error:', sessionError); // Keep error log
+  const { data: userData, error: userError } = await supabase.auth.getUser();
+  console.log('Server Action: getUser error:', userError); // Keep error log
 
   // Fetch user data to check role after successful sign-in
   console.log('Server Action: Attempting to get user...');

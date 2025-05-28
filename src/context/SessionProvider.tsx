@@ -1,13 +1,14 @@
 'use client';
 
 import React, { createContext, useState, useEffect, useContext, ReactNode } from 'react';
-import type { Session } from '@supabase/supabase-js';
+import type { Session, User } from '@supabase/supabase-js';
 import { createClientComponent } from '@/lib/supabaseClient'; // Use client component client
 
 import { SupabaseClient } from '@supabase/supabase-js';
 
 type SessionContextType = {
-  session: Session | null;
+  session: Session | null; // Keep Session for client-side auth state changes
+  user: User | null; // Add user for server-side fetched user
   loading: boolean;
   supabase: SupabaseClient; // Add supabase client to context type
 };
@@ -16,13 +17,15 @@ const SessionContext = createContext<SessionContextType | undefined>(undefined);
 
 interface SessionProviderProps {
   children: ReactNode;
-  serverSession: Session | null; // Session fetched on the server
+  serverSession: Session | null; // Session fetched on the server (from getSession)
+  serverUser: User | null; // User fetched on the server (from getUser)
 }
 
-export function SessionProvider({ children, serverSession }: SessionProviderProps) {
+export function SessionProvider({ children, serverSession, serverUser }: SessionProviderProps) {
   const [session, setSession] = useState<Session | null>(serverSession);
+  const [user, setUser] = useState<User | null>(serverUser);
   // If serverSession is null, we might be waiting for client-side hydration to confirm session status
-  const [loading, setLoading] = useState(serverSession === null); 
+  const [loading, setLoading] = useState(serverSession === null && serverUser === null);
   const supabase = createClientComponent();
 
   useEffect(() => {
@@ -41,6 +44,7 @@ export function SessionProvider({ children, serverSession }: SessionProviderProp
       (_event, currentSession) => {
         console.log("Auth state changed on client:", _event, currentSession);
         setSession(currentSession);
+        setUser(currentSession?.user || null); // Update user based on session
         if (!initialStateProcessed) {
           setLoading(false);
           initialStateProcessed = true;
@@ -72,9 +76,9 @@ export function SessionProvider({ children, serverSession }: SessionProviderProp
     return () => {
       authListener?.subscription.unsubscribe();
     };
-  }, [supabase.auth, serverSession]); // Add serverSession to dependencies
+  }, [supabase.auth, serverSession, serverUser]); // Add serverSession and serverUser to dependencies
 
-  const value = { session, loading, supabase }; // Include supabase in the context value
+  const value = { session, user, loading, supabase }; // Include session, user, loading, and supabase in the context value
 
   return (
     <SessionContext.Provider value={value}>
