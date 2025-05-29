@@ -2,6 +2,7 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
 export async function middleware(request: NextRequest) {
+  console.log(`[Middleware] Incoming request path: ${request.nextUrl.pathname}`);
   let supabaseResponse = NextResponse.next({
     request,
   })
@@ -33,14 +34,16 @@ export async function middleware(request: NextRequest) {
   const {
     data: { user },
   } = await supabase.auth.getUser()
-
+ 
+  console.log(`[Middleware] User: ${user ? user.id : 'No user'}`);
   // Check if the user is authenticated and has the 'admin' role
   const userRole =
     user?.user_metadata?.role ||
     user?.user_metadata?.["role"] ||
     user?.app_metadata?.role ||
     user?.app_metadata?.["role"];
-
+  console.log(`[Middleware] User Role: ${userRole}`);
+ 
   if (
     !user || userRole !== 'admin'
   ) {
@@ -49,6 +52,7 @@ export async function middleware(request: NextRequest) {
     url.pathname = '/auth/login'
     // If the user is trying to access an admin path, redirect them
     if (request.nextUrl.pathname.startsWith('/admin')) {
+        console.log(`[Middleware] Redirecting to: ${url.pathname}`);
         return NextResponse.redirect(url)
     }
   }
