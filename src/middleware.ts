@@ -5,13 +5,17 @@ export async function middleware(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
     request,
   });
-
+ 
   try {
+    console.log('[Middleware] Starting middleware execution.');
     // Vérifier que les variables d'environnement sont présentes
     if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
       console.error('Missing Supabase environment variables');
+      console.log(`NEXT_PUBLIC_SUPABASE_URL: ${process.env.NEXT_PUBLIC_SUPABASE_URL ? 'Present' : 'Missing'}`);
+      console.log(`NEXT_PUBLIC_SUPABASE_ANON_KEY: ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? 'Present' : 'Missing'}`);
       return supabaseResponse; // Return the initialized response
     }
+    console.log('Supabase environment variables are present.');
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -47,11 +51,13 @@ export async function middleware(request: NextRequest) {
     }
 
     // Vérification de l'utilisateur uniquement pour les routes protégées
+    console.log('[Middleware] Initializing Supabase client.');
     const {
       data: { user },
       error
     } = await supabase.auth.getUser()
-
+    console.log(`[Middleware] Supabase auth.getUser() result - User: ${user ? user.id : 'No user'}, Error: ${error ? error.message : 'None'}`);
+ 
     if (error) {
       console.error('Auth error:', error);
       return supabaseResponse;
