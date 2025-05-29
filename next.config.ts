@@ -24,13 +24,14 @@ const nextConfig: NextConfig = {
       },
       { // Added for Supabase Storage
         protocol: 'https',
-        hostname: 'llsifflkfjogjagmbmpi.supabase.co', // Replace with your Supabase project ID hostname
+        hostname: 'llsifflkfjogjagmbmpi.supabase.co',
         port: '',
-        pathname: '/storage/v1/object/public/**', // Allow access to public storage objects
+        pathname: '/storage/v1/object/public/**',
       },
     ],
   },
-  assetPrefix: process.env.NODE_ENV === 'production' ? 'https://9000-idx-studio-1745565635261.cluster-6vyo4gb53jczovun3dxslzjahs.cloudworkstations.dev' : '',
+  // Supprimez cette ligne problématique pour la production
+  // assetPrefix: process.env.NODE_ENV === 'production' ? 'https://9000-idx-studio-1745565635261.cluster-6vyo4gb53jczovun3dxslzjahs.cloudworkstations.dev' : '',
 };
 
 export default nextConfig;
