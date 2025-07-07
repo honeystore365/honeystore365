@@ -36,12 +36,23 @@ export default async function RootLayout({
 }>) {
   // Fetch and validate session on the server
   const supabase = await createClientServer();
-  const { data: { user } } = await supabase.auth.getUser(); // Validate user first
   let session = null;
+  let user = null;
 
-  const { data: sessionData } = await supabase.auth.getSession();
-  if (sessionData.session) {
-    session = sessionData.session;
+  try {
+    // First authenticate the user securely
+    const { data: { user: authUser }, error: userError } = await supabase.auth.getUser();
+    
+    if (userError) {
+      console.error('Error authenticating user:', userError);
+    } else if (authUser) {
+      user = authUser;
+      // Get session only after successful authentication
+      const { data: sessionData } = await supabase.auth.getSession();
+      session = sessionData.session;
+    }
+  } catch (err) {
+    console.error('Error in layout authentication:', err);
   }
 
   return (

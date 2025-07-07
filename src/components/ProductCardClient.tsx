@@ -58,13 +58,16 @@ export default function ProductCardClient({ product }: { product: Product }) {
   return (
     <div className="rounded-xl overflow-hidden shadow-lg bg-white flex flex-col">
       <div className="relative w-full h-56">
-        <Image
-          src={product.image_url || "https://picsum.photos/400/300"} // Fallback image
-          alt={product.name || "Product Image"}
-          layout="fill"
-          objectFit="cover"
-          className="rounded-t-xl"
-        />
+        <div className="relative w-full h-56">
+          <Image
+            src={product.image_url || "https://picsum.photos/400/300"} // Fallback image
+            alt={product.name || "Product Image"}
+            fill
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+            className="rounded-t-xl object-cover"
+            priority={true}
+          />
+        </div>
       </div>
       <div className="p-5 flex flex-col flex-grow">
         <h3 className="text-xl font-bold mb-2 text-honey-dark">

@@ -8,18 +8,25 @@ export async function signIn(formData: FormData) {
   const password = formData.get('password') as string;
   const supabase = await createClientServer();
 
-  const { error } = await supabase.auth.signInWithPassword({
+  const { data: signInData, error } = await supabase.auth.signInWithPassword({
     email,
     password,
   });
 
-  console.log('Server Action: signInWithPassword error:', error);
+  console.log('Server Action: signInWithPassword result:', {
+    session: signInData?.session,
+    user: signInData?.user,
+    error
+  });
 
   if (error) {
     console.error('Server Action Sign In Error:', error);
-    // TODO: Handle error redirection or message
     redirect('/auth/login?message=Could not authenticate user');
   }
+
+  // Verify session cookie was set
+  const { data: cookieCheck } = await supabase.auth.getSession();
+  console.log('Server Action: Post-login session check:', cookieCheck);
 
   console.log('Server Action: Sign in successful. Checking session immediately...');
   const { data: userData, error: userError } = await supabase.auth.getUser();

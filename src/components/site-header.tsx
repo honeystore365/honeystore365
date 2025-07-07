@@ -43,7 +43,12 @@ const authLinks = [
 // --- Component ---
 export function SiteHeader() {
   // Get session state from context at the top level
-  const { session, loading, supabase } = useSession(); // Call useSession at the top level
+  const { session, loading, supabase, user } = useSession(); // Call useSession at the top level
+  console.log('SiteHeader - Session state:', {
+    hasSession: !!session,
+    userEmail: user?.email,
+    loading
+  });
 
   const [cartItemCount, setCartItemCount] = useState(0); // Keep cart state if needed
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -75,10 +80,25 @@ export function SiteHeader() {
     checkAdminStatus();
   }, [session, supabase]); // Depend on session and supabase
 
+  const [isSigningOut, setIsSigningOut] = useState(false);
+
   const handleSignOut = async () => {
-    // Use supabase client from session context
-    await supabase.auth.signOut();
-    router.push('/'); // Redirect to home after sign out
+    setIsSigningOut(true);
+    try {
+      console.log('Attempting to sign out...');
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        console.error('Sign out error:', error);
+      } else {
+        console.log('Sign out successful, reloading page...');
+        // Force full page reload to ensure all components get fresh session state
+        window.location.href = '/';
+      }
+    } catch (error) {
+      console.error('Unexpected error during sign out:', error);
+    } finally {
+      setIsSigningOut(false);
+    }
   };
 
   // Custom mobile menu trigger that also controls the state
@@ -186,15 +206,27 @@ export function SiteHeader() {
 
         {/* Auth Buttons Section - Right aligned */}
         <div className="hidden flex-shrink-0 items-center gap-3 md:flex">
-          {session ? (
-            // Show sign out button if logged in
+          {session && user ? (
+            // Only show logout button if we have both a session AND verified user
+            console.log('Rendering logout button for authenticated user:', user.email),
             <Button
               variant="outline"
               size="sm"
               className="border-red-500 text-red-500 hover:bg-red-500/10"
               onClick={handleSignOut}
+              disabled={isSigningOut}
             >
-              تسجيل الخروج
+              {isSigningOut ? (
+                <span className="flex items-center gap-2">
+                  <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  جاري تسجيل الخروج...
+                </span>
+              ) : (
+                "تسجيل الخروج"
+              )}
             </Button>
           ) : (
             // Show login/register buttons if not logged in
@@ -286,8 +318,19 @@ export function SiteHeader() {
                     handleSignOut();
                     setMobileMenuOpen(false);
                   }}
+                  disabled={isSigningOut}
                 >
-                  تسجيل الخروج
+                  {isSigningOut ? (
+                    <span className="flex items-center gap-2">
+                      <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      جاري تسجيل الخروج...
+                    </span>
+                  ) : (
+                    "تسجيل الخروج"
+                  )}
                 </Button>
               ) : (
                 authLinks.map((link) => (

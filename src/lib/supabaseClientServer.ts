@@ -18,20 +18,32 @@ export const createClientServer = async (keyType: KeyType = 'anon') => {
     supabaseKey,
     {
       cookies: {
-        getAll() {
-          return cookieStore.getAll();
+        get: (name: string) => {
+          return cookieStore.get(name)?.value;
         },
-        setAll(cookiesToSet: { name: string; value: string; options: CookieOptions }[]) {
-          cookiesToSet.forEach(({ name, value, options }) => cookieStore.set(name, value, options));
+        set: (name: string, value: string, options: CookieOptions) => {
+          try {
+            cookieStore.set({ name, value, ...options });
+          } catch (error) {
+            console.error('Error setting cookie:', error);
+          }
         },
+        remove: (name: string, options: CookieOptions) => {
+          try {
+            cookieStore.set({ name, value: '', ...options });
+          } catch (error) {
+            console.error('Error removing cookie:', error);
+          }
+        }
       },
-      cookieEncoding: 'base64url', // Use 'base64url' encoding for Supabase session cookies
       cookieOptions: {
-        // You can add default cookie options here if needed
-        // For example:
-        // secure: process.env.NODE_ENV === 'production',
-        // sameSite: 'lax',
-      },
+        name: 'sb-llsifflkfjogjagmbmpi-auth-token',
+        domain: process.env.NODE_ENV === 'production' ? '.nectar-hives.com' : undefined,
+        path: '/',
+        sameSite: 'lax',
+        secure: process.env.NODE_ENV === 'production',
+        maxAge: 3600, // 1 hour
+      }
     }
   );
 };

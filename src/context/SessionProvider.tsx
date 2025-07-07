@@ -29,54 +29,109 @@ export function SessionProvider({ children, serverSession, serverUser }: Session
   const supabase = createClientComponent();
 
   useEffect(() => {
-    // This effect runs on the client after initial render.
-    // If serverSession was provided, we used that.
-    // The listener handles subsequent changes.
-
-    // If serverSession was null, the client needs to determine the auth state.
-    // onAuthStateChange will fire shortly after supabase client initializes.
-    // We set loading to true initially if serverSession was null,
-    // and onAuthStateChange will set it to false once state is known.
-    
+    console.log('Initializing auth state listener - serverSession:', serverSession);
     let initialStateProcessed = serverSession !== null;
 
+    const verifyAndSetUser = async (session: Session | null) => {
+      try {
+        if (!session) {
+          console.log('No session provided for verification');
+          setUser(null);
+          return false;
+        }
+
+        console.log('Verifying session with getUser()');
+        const { data: { user }, error } = await supabase.auth.getUser();
+        
+        if (error) {
+          console.error('Error verifying user:', error.message);
+          if (error.message.includes('Auth session missing')) {
+            console.log('Attempting to refresh session...');
+            const { data: { session: refreshedSession }, error: refreshError } = 
+              await supabase.auth.refreshSession();
+            
+            if (refreshError) {
+              console.error('Refresh session error:', refreshError);
+              return false;
+            }
+            
+            if (refreshedSession) {
+              console.log('Session refreshed, retrying getUser()');
+              const retry = await supabase.auth.getUser();
+              if (retry.error) {
+                console.error('Retry failed:', retry.error);
+                return false;
+              }
+              setUser(retry.data.user);
+              return true;
+            }
+          }
+          return false;
+        }
+        
+        if (user) {
+          console.log('Successfully verified user:', user.email);
+          setUser(user);
+          return true;
+        }
+        
+        return false;
+      } catch (err) {
+        console.error('Exception in verifyAndSetUser:', err);
+        return false;
+      } finally {
+        if (!session) {
+          setUser(null);
+        }
+      }
+    };
+
+    // Immediately verify server session if provided
+    if (serverSession) {
+      console.log('Verifying server-provided session');
+      verifyAndSetUser(serverSession).then((verified) => {
+        if (verified) {
+          setSession(serverSession);
+        }
+        setLoading(false);
+      });
+    }
+
     const { data: authListener } = supabase.auth.onAuthStateChange(
-      (_event, currentSession) => {
+      async (_event, currentSession) => {
         console.log("Auth state changed on client:", _event, currentSession);
-        setSession(currentSession);
-        setUser(currentSession?.user || null); // Update user based on session
+        
+        // Always verify the user with getUser() regardless of event type
+        const verified = await verifyAndSetUser(currentSession);
+        if (verified) {
+          setSession(currentSession);
+        } else {
+          setSession(null);
+        }
+
         if (!initialStateProcessed) {
+          console.log('Initial auth state resolved');
           setLoading(false);
           initialStateProcessed = true;
-        } else {
-          // For subsequent changes after initial load, ensure loading is false.
-          setLoading(false);
         }
       }
     );
-    
-    // If serverSession was null and onAuthStateChange hasn't fired yet
-    // (e.g. no active session client-side either), ensure loading becomes false.
-    // This timeout is a fallback in case onAuthStateChange doesn't fire immediately
-    // if there's truly no session.
-    if (serverSession === null) {
-        const timer = setTimeout(() => {
-            if (!initialStateProcessed) { // Check if onAuthStateChange has already run
-                setLoading(false);
-                initialStateProcessed = true; 
-            }
-        }, 500); // Adjust timeout as needed
-        return () => {
-            clearTimeout(timer);
-            authListener?.subscription.unsubscribe();
-        };
-    }
 
+    // Fallback timeout if no auth state change is detected
+    const timer = setTimeout(() => {
+      if (!initialStateProcessed) {
+        console.log('Auth state timeout - no session detected');
+        setLoading(false);
+        initialStateProcessed = true;
+      }
+    }, 1000);
 
     return () => {
+      clearTimeout(timer);
       authListener?.subscription.unsubscribe();
+      console.log('Cleaned up auth listener');
     };
-  }, [supabase.auth, serverSession, serverUser]); // Add serverSession and serverUser to dependencies
+  }, [supabase.auth, serverSession, serverUser]);
 
   const value = { session, user, loading, supabase }; // Include session, user, loading, and supabase in the context value
 
