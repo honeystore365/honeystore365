@@ -207,8 +207,8 @@ export function SiteHeader() {
         {/* Auth Buttons Section - Right aligned */}
         <div className="hidden flex-shrink-0 items-center gap-3 md:flex">
           {session && user ? (
-            // Only show logout button if we have both a session AND verified user
-            console.log('Rendering logout button for authenticated user:', user.email),
+            // Show logout button if we have a session, even if user data is still loading
+            console.log('Rendering logout button for authenticated session:', session),
             <Button
               variant="outline"
               size="sm"
@@ -274,8 +274,8 @@ export function SiteHeader() {
                 // Determine the correct href for profile/admin link
                 const profileHref = link.href === "/profile" ? (isAdmin ? "/admin" : "/profile") : link.href;
 
-                // Hide profile link if user is admin OR if user is not logged in
-                if (link.href === "/profile" && (isAdmin || !session)) {
+                // Hide profile link if user is admin, not logged in, or user data is not available
+                if (link.href === "/profile" && (isAdmin || !session || !user)) {
                   return null;
                 }
                 // Hide products link if user is admin

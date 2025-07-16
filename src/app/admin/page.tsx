@@ -56,29 +56,7 @@ function RecentOrdersTable({ orders }: { orders: Order[] }) {
             {orders.map((order, index) => {
               console.log(`Order ${order.id} data:`, order); // Add this log
               return (
-              <tr key={order.id}>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 text-right">{index + 1}</td> {/* Sequential Order Number */}
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 text-right">{order.id}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">
-                  {new Date(order.order_date).toLocaleDateString()} {/* Use order_date */}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">
-                  {/* Display customer name from the first element of the customers array */}
-                  {order.customers && order.customers.length > 0 ? `${order.customers[0].first_name || ''} ${order.customers[0].last_name || ''}`.trim() : 'N/A'}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">{order.total_amount !== undefined ? `$${order.total_amount.toFixed(2)}` : 'N/A'}</td> {/* Use total_amount */}
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">
-                  {/* Style simple pour le statut */}
-                  <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                    order.status === 'Completed' ? 'bg-green-100 text-green-800' :
-                    order.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
-                    order.status === 'Cancelled' ? 'bg-red-100 text-red-800' :
-                    'bg-gray-100 text-gray-800'
-                  }`}>
-                    {order.status || 'N/A'}
-                  </span>
-                </td>
-              </tr>
+              <tr key={order.id}><td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 text-right">{index + 1}</td><td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 text-right">{order.id}</td><td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">{new Date(order.order_date).toLocaleDateString()}</td><td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">{order.customers && order.customers.length > 0 ? `${order.customers[0].first_name || ''} ${order.customers[0].last_name || ''}`.trim() : 'N/A'}</td><td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">{order.total_amount !== undefined ? `$${order.total_amount.toFixed(2)}` : 'N/A'}</td><td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right"><span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${order.status === 'Completed' ? 'bg-green-100 text-green-800' : order.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' : order.status === 'Cancelled' ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800'}`}>{order.status || 'N/A'}</span></td></tr>
             )})}
           </tbody>
         </table>
