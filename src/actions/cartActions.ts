@@ -1,6 +1,6 @@
 'use server';
 
-import { createClientServer } from '@/lib/supabaseClientServer';
+import { createClientServer } from '@/lib/supabase';
 import { revalidatePath } from 'next/cache';
 
 // Define Product type (consider moving to a shared types file)
@@ -202,11 +202,32 @@ export async function getCartItems() {
       };
     }) || [];
     
-    return { items: processedItems, total, error: null };
+    // Fetch store settings for delivery fee using service role to avoid RLS issues
+    const supabaseAdmin = await createClientServer('service_role');
+    const { data: settingsRows, error: settingsError } = await supabaseAdmin
+      .from('store_settings')
+      .select('delivery_fee, updated_at')
+      .order('updated_at', { ascending: false })
+      .limit(1);
+    if (settingsError) {
+      console.warn('[Server] Error fetching store settings:', settingsError);
+    }
+    const settingsData = Array.isArray(settingsRows) ? settingsRows[0] : settingsRows;
+    const deliveryFee = settingsData?.delivery_fee || 0;
+    const shipping = deliveryFee; // Always apply delivery fee
+    const grandTotal = total + shipping;
+
+    return {
+      items: processedItems,
+      subtotal: total,
+      shipping,
+      grandTotal,
+      error: null
+    };
 
   } catch (error: any) {
     console.error('getCartItems Error:', error);
-    return { items: [], total: 0, error: error.message || 'Failed to retrieve cart items.' };
+    return { items: [], subtotal: 0, error: error.message || 'Failed to retrieve cart items.' };
   }
 }
 

@@ -1,7 +1,8 @@
 import { useEffect } from 'react';
-import { supabase } from '@/lib/supabaseClient';
+import { createClientComponent } from '@/lib/supabase/client';
 
 const handleLogin = async (email: string, password: string) => {
+  const supabase = createClientComponent();
   const { data: { session }, error } = await supabase.auth.signInWithPassword({ email, password });
   if (error) {
     console.error('Login error:', error.message);

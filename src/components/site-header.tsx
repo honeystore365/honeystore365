@@ -4,12 +4,14 @@ import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { cn } from '@/lib/utils';
-import { createClientComponent } from '@/lib/supabaseClient'; // Keep for signOut
+import { createClientComponent } from '@/lib/supabase/client'; // Keep for signOut
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react'; // Keep useState, add useEffect back just in case, though likely not needed for session
 import type { Session } from '@supabase/supabase-js'; // Re-add Session type import
 import { ShoppingCart, User } from 'lucide-react';
 import { useSession } from '@/context/SessionProvider'; // Import useSession hook
+import { useUserRole } from '@/hooks/useUserRole';
+import { ConditionalCartBadge } from '@/components/ui/conditional-cart-badge';
 
 // --- Constants ---
 const LOGO_URL = "/favicon.png";
@@ -19,10 +21,10 @@ const COMPANY_NAME = "مناحل الرحيق";
 const navLinkBaseClasses = "relative flex items-center gap-1.5 text-base font-medium text-gray-700 transition-colors duration-300 hover:text-honey";
 
 // Navigation links with icons for better visual hierarchy
-const navigationLinks = [
-  { href: "/products", label: "المنتجات", icon: null },
-  { href: "/cart", label: "السلة", icon: <ShoppingCart className="h-4 w-4" />, showBadge: true },
-  { href: "/profile", label: "حسابي", icon: <User className="h-4 w-4" /> },
+const getNavigationLinks = (isAdmin: boolean, canUseCart: boolean) => [
+  ...(isAdmin ? [] : [{ href: "/products", label: "المنتجات", icon: null }]),
+  ...(canUseCart ? [{ href: "/cart", label: "السلة", icon: <ShoppingCart className="h-4 w-4" />, showBadge: true }] : []),
+  { href: isAdmin ? "/admin" : "/profile", label: isAdmin ? "لوحة التحكم" : "حسابي", icon: <User className="h-4 w-4" /> },
 ];
 
 const authLinks = [
@@ -44,6 +46,7 @@ const authLinks = [
 export function SiteHeader() {
   // Get session state from context
   const { session, loading } = useSession(); // Use context hook
+  const { canUseCart, isAdmin } = useUserRole(); // Get user role info
   const [cartItemCount, setCartItemCount] = useState(0); // Keep cart state if needed
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const router = useRouter();
@@ -123,41 +126,22 @@ export function SiteHeader() {
 
         {/* Desktop Navigation - Center aligned */}
         <nav className="hidden flex-grow items-center justify-center space-x-1 md:flex md:space-x-6 lg:space-x-12">
-          {navigationLinks.map((link) => {
-            // Determine if user is admin
-            const isAdmin = session?.user?.user_metadata?.role === 'admin';
-            // Determine the correct href for profile/admin link
-            const profileHref = link.href === "/profile" ? (isAdmin ? "/admin" : "/profile") : link.href;
-
-            // Hide profile link if user is admin OR if user is not logged in
-            if (link.href === "/profile" && (isAdmin || !session)) {
-              return null;
-            }
-            // Hide products link if user is admin
-            if (link.href === "/products" && isAdmin) {
-              return null;
-            }
-
-            // For other links, or profile/products link for non-admin/logged-out user
-            return (
-              <Link
-                key={link.href} // Keep original href as key for stability
-                href={profileHref} // Use determined href (will be /profile for non-admin)
-                className={cn(
-                  navLinkBaseClasses,
-                  "px-3 py-2 rounded-md hover:bg-gray-50"
-                )}
-              >
-                {link.icon && <span className="text-honey">{link.icon}</span>}
-                <span>{link.label}</span>
-                {link.href === "/cart" && link.showBadge && cartItemCount > 0 && (
-                  <span className="absolute -right-2 -top-2 flex h-5 w-5 items-center justify-center rounded-full bg-honey text-xs font-bold text-white">
-                    {cartItemCount}
-                  </span>
-                )}
-              </Link>
-            );
-          })}
+          {getNavigationLinks(isAdmin, canUseCart).map((link) => (
+            <Link
+              key={link.href}
+              href={link.href}
+              className={cn(
+                navLinkBaseClasses,
+                "px-3 py-2 rounded-md hover:bg-gray-50 relative"
+              )}
+            >
+              {link.icon && <span className="text-honey">{link.icon}</span>}
+              <span>{link.label}</span>
+              {link.href === "/cart" && link.showBadge && (
+                <ConditionalCartBadge />
+              )}
+            </Link>
+          ))}
         </nav>
 
         {/* Auth Buttons Section - Right aligned */}
@@ -190,18 +174,16 @@ export function SiteHeader() {
 
         {/* Mobile Navigation */}
         <div className="flex items-center md:hidden">
-          {/* Cart icon with badge for quick access on mobile */}
-          <Link
-            href="/cart"
-            className="mr-2 flex items-center justify-center rounded-full p-2 text-gray-700 hover:bg-gray-100"
-          >
-            <ShoppingCart className="h-5 w-5" />
-            {cartItemCount > 0 && (
-              <span className="absolute right-10 top-3 flex h-5 w-5 items-center justify-center rounded-full bg-honey text-xs font-bold text-white">
-                {cartItemCount}
-              </span>
-            )}
-          </Link>
+          {/* Cart icon with badge for quick access on mobile - only for customers */}
+          {canUseCart && (
+            <Link
+              href="/cart"
+              className="mr-2 flex items-center justify-center rounded-full p-2 text-gray-700 hover:bg-gray-100 relative"
+            >
+              <ShoppingCart className="h-5 w-5 text-honey" />
+              <ConditionalCartBadge />
+            </Link>
+          )}
 
           {/* Mobile menu trigger */}
           <CustomMobileMenuTrigger />
@@ -213,44 +195,25 @@ export function SiteHeader() {
         <div className="animate-in fade-in slide-in-from-top-5 md:hidden">
           <div className="border-t border-gray-200 bg-white px-4 py-3 shadow-lg">
             <nav className="flex flex-col space-y-3">
-              {navigationLinks.map((link) => {
-                // Determine if user is admin
-                const isAdmin = session?.user?.user_metadata?.role === 'admin';
-                // Determine the correct href for profile/admin link
-                const profileHref = link.href === "/profile" ? (isAdmin ? "/admin" : "/profile") : link.href;
-
-                // Hide profile link if user is admin OR if user is not logged in
-                if (link.href === "/profile" && (isAdmin || !session)) {
-                  return null;
-                }
-                // Hide products link if user is admin
-                if (link.href === "/products" && isAdmin) {
-                  return null;
-                }
-
-                // For other links, or profile/products link for non-admin/logged-out user
-                return (
-                  <Link
-                    key={link.href} // Keep original href as key
-                    href={profileHref} // Use determined href (will be /profile for non-admin)
-                    className={cn(
-                      navLinkBaseClasses,
-                      "flex w-full justify-between rounded-md px-3 py-2.5 hover:bg-gray-50"
+              {getNavigationLinks(isAdmin, canUseCart).map((link) => (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className={cn(
+                    navLinkBaseClasses,
+                    "flex w-full justify-between rounded-md px-3 py-2.5 hover:bg-gray-50 relative"
+                  )}
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  <div className="flex items-center gap-2">
+                    {link.icon && <span className="text-honey">{link.icon}</span>}
+                    <span>{link.label}</span>
+                    {link.href === "/cart" && link.showBadge && (
+                      <ConditionalCartBadge />
                     )}
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    <div className="flex items-center gap-2">
-                      {link.icon && <span className="text-honey">{link.icon}</span>}
-                      <span>{link.label}</span>
-                    </div>
-                    {link.href === "/cart" && link.showBadge && cartItemCount > 0 && (
-                      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-honey text-xs font-bold text-white">
-                        {cartItemCount}
-                      </span>
-                    )}
-                  </Link>
-                );
-              })}
+                  </div>
+                </Link>
+              ))}
             </nav>
 
             {/* Auth buttons in mobile menu */}

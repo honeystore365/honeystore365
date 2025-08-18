@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { createClientComponent } from '@/lib/supabaseClient'; // Changed import
+import { createClientComponent } from '@/lib/supabase/client'; // Changed import
 import { CustomForm } from '@/components/form';
 import { useRouter } from 'next/navigation';
 import { useParams } from 'next/navigation';

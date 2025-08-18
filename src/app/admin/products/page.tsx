@@ -2,7 +2,7 @@
 // Ce fichier a été déplacé dans src/app/admin/products/page.tsx
 
 import { useState, useEffect, useCallback } from 'react';
-import { createClientComponent } from '@/lib/supabaseClient';
+import { createClientComponent } from '@/lib/supabase/client';
 import { DataTable } from '@/components/data-table';
 import Link from 'next/link'; // Import Link
 import { Button } from '@/components/ui/button'; // Import Button

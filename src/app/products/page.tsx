@@ -1,6 +1,6 @@
 
 
-import { createClientServer } from "@/lib/supabaseClientServer";
+import { createClientServer } from "@/lib/supabase/server";
 // Image is now used within ProductCardClient
 import ProductCardClient from "@/components/ProductCardClient"; // Import the client component
 

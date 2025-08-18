@@ -3,9 +3,14 @@
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import CartItemControls from '@/components/CartItemControls';
 import ClearCartButton from '@/components/ClearCartButton';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Label } from '@/components/ui/label';
+import { createClient } from '@/lib/supabase/client';
 
 // Types should match those in cart/page.tsx and cartActions.ts
 interface CartProduct {
@@ -25,11 +30,43 @@ interface CartItem {
 interface CartDisplayClientProps {
   initialItems: CartItem[];
   initialTotal: number;
+  initialShipping?: number;
+  initialGrandTotal?: number;
 }
 
-export default function CartDisplayClient({ initialItems, initialTotal }: CartDisplayClientProps) {
+export default function CartDisplayClient({ initialItems, initialTotal, initialShipping }: CartDisplayClientProps) {
+  const router = useRouter();
   const [items, setItems] = useState<CartItem[]>(initialItems);
   const [total, setTotal] = useState<number>(initialTotal);
+
+  // Seed deliveryFee with initialShipping when subtotal < 100 on server, will be refined after fetching store settings
+  const [deliveryFee, setDeliveryFee] = useState<number | null>(
+    typeof initialShipping === 'number' ? initialShipping : null
+  );
+
+  // Payment dialog state
+  const [openPaymentDialog, setOpenPaymentDialog] = useState(false);
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<'cash_on_delivery' | 'mobile_payment' | 'bank_transfer' | 'paypal'>('cash_on_delivery');
+
+  useEffect(() => {
+    const fetchStoreSettings = async () => {
+      try {
+        const resp = await fetch('/api/store-settings/delivery-fee', { cache: 'no-store' });
+        const json = await resp.json();
+        // API returns 200 with default 0 even on failure; just use value if number
+        setDeliveryFee(typeof json.delivery_fee === 'number' ? json.delivery_fee : 0);
+      } catch (e) {
+        console.warn('Error fetching store settings (client):', e);
+        setDeliveryFee(0);
+      }
+    };
+
+    fetchStoreSettings();
+  }, []);
+
+  // Calculate shipping and grand total (always apply delivery fee)
+  const shipping = deliveryFee !== null ? deliveryFee : 0;
+  const grandTotal = total + shipping;
 
   // Recalculate total whenever items change
   useEffect(() => {
@@ -147,18 +184,18 @@ export default function CartDisplayClient({ initialItems, initialTotal }: CartDi
               <span>{total.toFixed(2)} د.ت</span>
             </div>
             <div className="flex justify-between text-lg">
-              <span>الشحن</span>
-              <span className="text-green-600">مجاني</span> {/* Or calculate shipping */}
+              <span>رسوم التوصيل</span>
+              <span>{shipping.toFixed(2)} د.ت</span>
             </div>
             <div className="border-t pt-3 mt-3 flex justify-between text-xl font-bold text-honey-dark">
               <span>المجموع الإجمالي</span>
-              <span>{total.toFixed(2)} د.ت</span>
+              <span>{grandTotal.toFixed(2)} د.ت</span>
             </div>
           </div>
           <Button 
             size="lg"
             className="w-full bg-honey hover:bg-honey-dark text-white text-lg py-3 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 transform hover:scale-105"
-            // onClick={() => router.push('/checkout')} // Or handle checkout action
+            onClick={() => setOpenPaymentDialog(true)}
           >
             الانتقال إلى الدفع
           </Button>
@@ -167,6 +204,62 @@ export default function CartDisplayClient({ initialItems, initialTotal }: CartDi
           </p>
         </div>
       </div>
+
+      {/* Payment Method Dialog */}
+      <Dialog open={openPaymentDialog} onOpenChange={setOpenPaymentDialog}>
+        <DialogContent className="sm:max-w-[520px]">
+          <DialogHeader>
+            <DialogTitle>اختر طريقة الدفع</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <RadioGroup value={selectedPaymentMethod} onValueChange={(v) => setSelectedPaymentMethod(v as any)} className="space-y-3">
+              <div className="flex items-center gap-3 p-3 border rounded-lg hover:bg-gray-50">
+                <RadioGroupItem value="cash_on_delivery" id="pm_cod" />
+                <Label htmlFor="pm_cod" className="cursor-pointer flex-1">
+                  <div className="font-semibold">الدفع عند الاستلام</div>
+                  <div className="text-sm text-gray-600">ادفع نقداً عند وصول الطلب</div>
+                </Label>
+              </div>
+              <div className="flex items-center gap-3 p-3 border rounded-lg hover:bg-gray-50">
+                <RadioGroupItem value="mobile_payment" id="pm_edinar" />
+                <Label htmlFor="pm_edinar" className="cursor-pointer flex-1">
+                  <div className="font-semibold">الخصم من بطاقة e-Dinar</div>
+                  <div className="text-sm text-gray-600">الدفع ببطاقة e-Dinar بشكل آمن</div>
+                </Label>
+              </div>
+              <div className="flex items-center gap-3 p-3 border rounded-lg hover:bg-gray-50">
+                <RadioGroupItem value="bank_transfer" id="pm_postal" />
+                <Label htmlFor="pm_postal" className="cursor-pointer flex-1">
+                  <div className="font-semibold">حوالة بريدية</div>
+                  <div className="text-sm text-gray-600">الدفع عبر الحوالة البريدية</div>
+                </Label>
+              </div>
+              <div className="flex items-center gap-3 p-3 border rounded-lg hover:bg-gray-50">
+                <RadioGroupItem value="paypal" id="pm_paypal" />
+                <Label htmlFor="pm_paypal" className="cursor-pointer flex-1">
+                  <div className="font-semibold">PayPal</div>
+                  <div className="text-sm text-gray-600">ادفع بأمان عبر PayPal</div>
+                </Label>
+              </div>
+            </RadioGroup>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setOpenPaymentDialog(false)}>إلغاء</Button>
+            <Button
+              onClick={() => {
+                try {
+                  if (typeof window !== 'undefined') {
+                    sessionStorage.setItem('checkout.paymentMethod', selectedPaymentMethod);
+                  }
+                } catch {}
+                router.push(`/checkout?method=${encodeURIComponent(selectedPaymentMethod)}`);
+              }}
+            >
+              متابعة
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

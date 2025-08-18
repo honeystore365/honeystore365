@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { removeCartItem, updateCartItemQuantity } from '@/actions/cartActions';
 import { useToast } from '@/hooks/use-toast';
+import { useCart } from '@/context/CartProvider';
 import { MinusIcon, PlusIcon, Trash2Icon } from 'lucide-react';
 
 interface CartItemControlsProps {
@@ -25,6 +26,7 @@ export default function CartItemControls({
   const [quantity, setQuantity] = useState(initialQuantity);
   const [isUpdating, setIsUpdating] = useState(false);
   const { toast } = useToast();
+  const { refreshCart } = useCart();
 
   // Update quantity optimistically and call server action
   const handleUpdateQuantity = async (newQuantity: number) => {
@@ -43,6 +45,8 @@ export default function CartItemControls({
       if (result.success) {
         toast({ title: "Success", description: "Cart updated." });
         onQuantityChange?.(cartItemId, newQuantity); // Notify parent on success
+        // Refresh the cart context to update the badge
+        await refreshCart();
       } else {
         toast({ title: "Error", description: result.message || "Failed to update quantity.", variant: "destructive" });
         setQuantity(oldQuantity); // Revert optimistic update on failure
@@ -63,6 +67,8 @@ export default function CartItemControls({
       if (result.success) {
         toast({ title: "Success", description: "Item removed from cart." });
         onRemove?.(cartItemId); // Notify parent
+        // Refresh the cart context to update the badge
+        await refreshCart();
         // No need to set local state as parent will remove the item
       } else {
         toast({ title: "Error", description: result.message || "Failed to remove item.", variant: "destructive" });

@@ -1,171 +1,180 @@
 // src/app/admin/page.tsx
-import { cookies } from 'next/headers';
-import { createClientServer } from '@/lib/supabaseClientServer';
-import { Database } from '@/types/supabase'; // Adjusted to use absolute path alias
+import { createClientServer } from '@/lib/supabase/server';
+import Link from 'next/link';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Users, Package, Tags, ShoppingCart, Truck, CheckCircle } from 'lucide-react';
 
-// --- Icônes pour les cartes (optionnel, exemple avec lucide-react) ---
-import { Users, Package, Tags, ShoppingCart, DollarSign } from 'lucide-react';
-
-// --- Composant Carte Statistique ---
-interface StatCardProps {
-  title: string;
-  value: string | number | undefined; // Allow undefined for loading/error states
-  icon: React.ElementType;
-  bgColor?: string; // Optionnel pour couleur de fond
-}
-
-function StatCard({ title, value, icon: Icon, bgColor = 'bg-white' }: StatCardProps) {
+function StatCard({ title, value, icon: Icon, color = 'text-gray-600' }: { title: string; value: string | number; icon: React.ElementType; color?: string }) {
   return (
-    <div className={`${bgColor} p-6 rounded-lg shadow-md flex items-center space-x-4`}>
-      <div className="p-3 bg-gray-100 rounded-full">
-        <Icon className="h-6 w-6 text-gray-600" />
-      </div>
-      <div>
-        <p className="text-sm font-medium text-gray-500">{title}</p>
-        <p className="text-2xl font-bold text-gray-900">{value}</p>
+    <div className="bg-white p-5 rounded-xl shadow-sm border">
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-sm text-gray-600">{title}</p>
+          <p className="text-2xl font-bold mt-1">{value}</p>
+        </div>
+        <div className="p-3 rounded-full bg-gray-50">
+          <Icon className={`h-6 w-6 ${color}`} />
+        </div>
       </div>
     </div>
   );
 }
 
-// --- Composant Tableau Commandes Récentes ---
-// Adaptez les types en fonction de votre table 'orders' - Use actual column names
-interface Order {
-  id: string; // uuid
-  order_date: string; // timestamp with time zone
-  customer_id?: string; // Assuming this exists for customer identifier
-  total_amount?: number; // Use actual column name
-  status?: string; // Assuming status column exists
+function getStatusBadgeAr(status?: string | null) {
+  const s = (status || '').toLowerCase();
+  if (!s || ['pending confirmation','pending','awaiting confirmation','awaiting_confirmation'].includes(s)) {
+    return <Badge className="bg-yellow-50 text-yellow-700 border border-yellow-200">في انتظار التأكيد</Badge>;
+  }
+  if (s === 'confirmed') return <Badge className="bg-green-50 text-green-700 border border-green-200">مؤكد</Badge>;
+  if (['processing','packed','emballé'].includes(s)) return <Badge className="bg-purple-50 text-purple-700 border border-purple-200">قيد التحضير</Badge>;
+  if (s === 'shipped') return <Badge className="bg-indigo-50 text-indigo-700 border border-indigo-200">تم الشحن</Badge>;
+  if (s === 'delivered') return <Badge className="bg-blue-50 text-blue-700 border border-blue-200">تم التوصيل</Badge>;
+  if (['cancelled','canceled'].includes(s)) return <Badge variant="destructive">ملغي</Badge>;
+  return <Badge className="bg-yellow-50 text-yellow-700 border border-yellow-200">في انتظار التأكيد</Badge>;
 }
 
-function RecentOrdersTable({ orders }: { orders: Order[] }) {
-    if (!orders || orders.length === 0) {
-        return <p className="text-gray-500 mt-4">لم يتم العثور على طلبات حديثة.</p>; // Translated
-    }
-
-  return (
-    <div className="bg-white p-6 rounded-lg shadow-md mt-8">
-      <h2 className="text-xl font-semibold mb-4 text-gray-800">الطلبات الأخيرة</h2> {/* Translated */}
-      <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">معرف الطلب</th> {/* Translated */}
-              <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">التاريخ</th> {/* Translated */}
-              <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">العميل</th> {/* Translated */}
-              <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">المجموع</th> {/* Translated */}
-              <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">الحالة</th> {/* Translated */}
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {orders.map((order) => (
-              <tr key={order.id}>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 text-right">{order.id}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">
-                  {new Date(order.order_date).toLocaleDateString()} {/* Use order_date */}
-                </td>
-                {/* Assuming customer_id exists and needs fetching related customer name/email */}
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">{order.customer_id || 'N/A'}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">{order.total_amount !== undefined ? `$${order.total_amount.toFixed(2)}` : 'N/A'}</td> {/* Use total_amount */}
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">
-                  {/* Style simple pour le statut */}
-                  <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                    order.status === 'Completed' ? 'bg-green-100 text-green-800' :
-                    order.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
-                    order.status === 'Cancelled' ? 'bg-red-100 text-red-800' :
-                    'bg-gray-100 text-gray-800'
-                  }`}>
-                    {order.status || 'N/A'}
-                  </span>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
+function getPaymentAr(m?: string | null) {
+  switch ((m || '').trim()) {
+    case 'cash_on_delivery': return 'الدفع عند الاستلام';
+    case 'mobile_payment': return 'الخصم من بطاقة e-Dinar';
+    case 'bank_transfer': return 'تحويل بنكي';
+    case 'paypal': return 'PayPal';
+    default: return 'غير محدد';
+  }
 }
 
-
-// --- Page Principale du Dashboard ---
 export default async function AdminPage() {
-  const supabase = await createClientServer(); // Use standard server client - Added await
+  // Utiliser la service key pour éviter les soucis RLS dans le Dashboard
+  const supabase = await createClientServer('service_role');
 
+  // Compteurs de base
+  const [{ count: productCount }, { count: categoryCount }, { count: orderCount }] = await Promise.all([
+    supabase.from('products').select('*', { count: 'exact', head: true }),
+    supabase.from('categories').select('*', { count: 'exact', head: true }),
+    supabase.from('orders').select('*', { count: 'exact', head: true }),
+  ]);
 
-  // --- Récupération des données ---
-  // ATTENTION: Adaptez les noms de tables ('products', 'categories', 'orders', 'customers')
-  // et les colonnes selon VOTRE schéma exact !
+  // Clients (fallback sans RPC)
+  const { count: customerCount } = await supabase.from('customers').select('*', { count: 'exact', head: true });
 
-  // Nombre de Produits
-  const { count: productCount, error: productError } = await supabase
-    .from('products') // <- Adaptez le nom de la table
-    .select('*', { count: 'exact', head: true });
+  // Commandes récentes enrichies
+  const { data: recent, error: ordersErr } = await supabase
+    .from('orders')
+    .select('id, order_date, customer_id, total_amount, status, payment_method')
+    .order('order_date', { ascending: false })
+    .limit(8);
 
-  // Nombre de Catégories
-  const { count: categoryCount, error: categoryError } = await supabase
-    .from('categories') // <- Adaptez le nom de la table
-    .select('*', { count: 'exact', head: true });
-
-  // Nombre de Commandes
-  const { count: orderCount, error: orderError } = await supabase
-    .from('orders') // <- Adaptez le nom de la table
-    .select('*', { count: 'exact', head: true });
-
-  // Nombre de Clients (Non-Admin) using RPC
-  const { data: nonAdminCustomers, error: customerRpcError } = await supabase.rpc('get_non_admin_customers');
-  const customerCount = nonAdminCustomers?.length; // Count non-admin customers
-  // Note: Handle customerRpcError if needed
-
-   // Commandes Récentes (Exemple: 5 dernières) - Use correct columns
-   const { data: recentOrders, error: recentOrdersError } = await supabase
-   .from('orders')
-   .select('id, order_date, customer_id, total_amount, status') // Use correct columns
-   .order('order_date', { ascending: false }) // Use order_date
-   .limit(5);
-
-  // Gestion basique des erreurs (vous pouvez améliorer ceci) - Added customerRpcError
-  const errors = { productError, categoryError, orderError, customerRpcError, recentOrdersError };
-  let hasError = false;
-  for (const key in errors) {
-    const errorValue = errors[key as keyof typeof errors];
-    if (errorValue) {
-      hasError = true;
-      // Attempt to log message and details if they exist, otherwise the whole object
-      const errorMessage = errorValue.message ? `${errorValue.message}${errorValue.details ? ` (${errorValue.details})` : ''}` : JSON.stringify(errorValue);
-      console.error(`Error fetching ${key.replace('Error', '')}:`, errorMessage);
-    }
+  let recentOrders = recent || [];
+  let addressesMap: Record<string, any> = {};
+  let customersMap: Record<string, any> = {};
+  if (recentOrders.length > 0) {
+    const ids = recentOrders.map(o => o.customer_id);
+    const [{ data: addrs }, { data: custs }] = await Promise.all([
+      supabase.from('addresses').select('customer_id, phone_number, city, address_line_1').in('customer_id', ids),
+      supabase.from('customers').select('id, first_name, last_name, email').in('id', ids),
+    ]);
+    (addrs || []).forEach(a => { addressesMap[a.customer_id] = a; });
+    (custs || []).forEach(c => { customersMap[c.id] = c; });
   }
 
-  if (hasError) {
-    console.error("Overall dashboard data fetching encountered issues. See details above. Raw error objects:", errors);
-    // Afficher un message d'erreur à l'utilisateur pourrait être utile ici,
-    // par exemple, en passant un état d'erreur aux composants enfants ou à la page.
-  }
+  // Statistiques par état (globales)
+  const { data: allOrders } = await supabase.from('orders').select('status, total_amount');
+  const normalize = (s: any) => ((s || '') as string).toLowerCase();
+  const stats = {
+    total: allOrders?.length || 0,
+    pending: (allOrders || []).filter(o => {
+      const k = normalize(o.status);
+      return !k || ['pending confirmation','pending','awaiting confirmation','awaiting_confirmation'].includes(k);
+    }).length,
+    confirmed: (allOrders || []).filter(o => normalize(o.status) === 'confirmed').length,
+    processing: (allOrders || []).filter(o => ['processing','packed','emballé'].includes(normalize(o.status))).length,
+    shipped: (allOrders || []).filter(o => normalize(o.status) === 'shipped').length,
+    delivered: (allOrders || []).filter(o => normalize(o.status) === 'delivered').length,
+    cancelled: (allOrders || []).filter(o => ['cancelled','canceled'].includes(normalize(o.status))).length,
+    revenue: (allOrders || []).reduce((s, o: any) => s + Number(o.total_amount || 0), 0),
+  };
 
   return (
-    // Le layout AdminLayout est appliqué automatiquement
-    <div>
-      <h1 className="text-3xl font-bold mb-8 text-gray-900">
-        لوحة تحكم المشرف
-      </h1>
+    <div className="container mx-auto py-8 px-4">
+      <h1 className="text-3xl font-bold mb-8 text-honey-dark">لوحة تحكم المشرف</h1>
 
-      {/* Grille pour les cartes statistiques */}
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-        {/* Use customerCount from RPC */}
-        <StatCard title="إجمالي العملاء" value={customerCount ?? 'N/A'} icon={Users} />
-        <StatCard title="إجمالي المنتجات" value={productCount ?? 'N/A'} icon={Package} />
-        <StatCard title="إجمالي الفئات" value={categoryCount ?? 'N/A'} icon={Tags} />
-        <StatCard title="إجمالي الطلبات" value={orderCount ?? 'N/A'} icon={ShoppingCart} />
-        {/* Ajoutez d'autres cartes si nécessaire (ex: Revenu Total) */}
-        {/* <StatCard title="Total Revenue" value="$12,345" icon={DollarSign} /> */}
+      {/* Statistiques principales */}
+      <div className="grid grid-cols-1 md:grid-cols-4 xl:grid-cols-6 gap-4 mb-8">
+        <StatCard title="إجمالي الطلبات" value={stats.total} icon={ShoppingCart} />
+        <StatCard title="في انتظار التأكيد" value={stats.pending} icon={Package} color="text-yellow-600" />
+        <StatCard title="مؤكدة" value={stats.confirmed} icon={Users} color="text-green-600" />
+        <StatCard title="قيد التحضير" value={stats.processing} icon={Package} color="text-purple-600" />
+        <StatCard title="تم الشحن" value={stats.shipped} icon={Truck} color="text-indigo-600" />
+        <StatCard title="تم التوصيل" value={stats.delivered} icon={CheckCircle} color="text-blue-600" />
+        <StatCard title="ملغي" value={stats.cancelled} icon={Package} color="text-red-600" />
+        <StatCard title="إجمالي الإيرادات" value={`${stats.revenue.toFixed(2)} د.ت`} icon={Package} />
+        <StatCard title="إجمالي العملاء" value={customerCount ?? 0} icon={Users} />
+        <StatCard title="إجمالي المنتجات" value={productCount ?? 0} icon={Package} />
+        <StatCard title="إجمالي الفئات" value={categoryCount ?? 0} icon={Tags} />
       </div>
 
-      {/* Tableau des commandes récentes */}
-      <RecentOrdersTable orders={recentOrders || []} />
+      {/* الطلبات الأخيرة (cartes en arabe) */}
+      <Card>
+        <CardHeader>
+          <CardTitle>الطلبات الأخيرة</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {recentOrders.length === 0 ? (
+            <div className="text-center py-12 text-gray-500">لا توجد طلبات حديثة</div>
+          ) : (
+            <div className="space-y-4">
+              {recentOrders.map(order => {
+                const c = customersMap[order.customer_id] || {};
+                const a = addressesMap[order.customer_id] || {};
+                const shortId = `#${order.id.slice(-8).toUpperCase()}`;
+                return (
+                  <div key={order.id} className="border rounded-xl bg-white p-4 md:p-5 shadow-sm">
+                    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 border-b pb-3">
+                      <div className="flex items-center gap-3">
+                        <span className="text-sm text-gray-500">رقم الطلب</span>
+                        <span className="font-bold text-honey-dark">{shortId}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {getStatusBadgeAr(order.status)}
+                        <span className="text-sm text-gray-500">بتاريخ</span>
+                        <span className="text-sm">{new Date(order.order_date).toLocaleDateString('ar-TN')}</span>
+                      </div>
+                    </div>
 
-      {/* Vous pouvez ajouter d'autres sections ici */}
-
+                    <div className="grid grid-cols-1 md:grid-cols-5 gap-4 pt-3">
+                      <div>
+                        <div className="text-xs text-gray-500 mb-1">العميل</div>
+                        <div className="font-semibold">{`${c.first_name || ''} ${c.last_name || ''}`.trim() || 'غير محدد'}</div>
+                        <div className="text-xs text-gray-500">{c.email || ''}</div>
+                      </div>
+                      <div>
+                        <div className="text-xs text-gray-500 mb-1">الهاتف</div>
+                        <div className="text-sm font-semibold">{a.phone_number || '—'}</div>
+                      </div>
+                      <div>
+                        <div className="text-xs text-gray-500 mb-1">طريقة الدفع</div>
+                        <div className="font-medium">{getPaymentAr((order as any).payment_method)}</div>
+                      </div>
+                      <div>
+                        <div className="text-xs text-gray-500 mb-1">المدينة</div>
+                        <div className="font-medium">{a.city || '—'}</div>
+                      </div>
+                      <div>
+                        <div className="text-xs text-gray-500 mb-1">المبلغ</div>
+                        <div className="text-lg font-bold text-gray-900">{Number(order.total_amount || 0).toFixed(2)} د.ت</div>
+                      </div>
+                      <div className="md:col-span-5 flex items-end justify-end">
+                        <Link href={`/admin/orders/${order.id}`} className="text-honey-dark underline">عرض التفاصيل</Link>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }

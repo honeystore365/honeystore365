@@ -22,7 +22,7 @@ interface CartPageItem {
 }
 
 export default async function CartPage() {
-  const { items, total, error: cartError } = await getCartItems();
+  const { items, subtotal, shipping, grandTotal, error: cartError } = await getCartItems();
 
   if (cartError) {
     return (
@@ -56,7 +56,7 @@ export default async function CartPage() {
         سلة التسوق الخاصة بك
       </h1>
       {/* Delegate rendering and client-side state management to CartDisplayClient */}
-      <CartDisplayClient initialItems={items} initialTotal={total} />
+      <CartDisplayClient initialItems={items} initialTotal={subtotal ?? 0} initialShipping={shipping ?? 0} initialGrandTotal={grandTotal ?? (subtotal ?? 0)} />
     </div>
   );
 }

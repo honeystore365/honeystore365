@@ -7,8 +7,10 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   return (
-    // min-h-screen assure que le layout prend au moins toute la hauteur de l'écran
-    <div className="flex min-h-screen bg-gray-100">
+    // AdminSessionProvider is now handled by ConditionalProviders in root layout
+    // The admin header is now handled by the root layout's ConditionalHeader
+    // This layout only handles the sidebar and main content area
+    <div className="flex flex-1 bg-gray-100">
       <Sidebar />
       {/* 'main' est sémantiquement correct pour le contenu principal */}
       {/* p-4/6/8 pour le padding, overflow-auto si le contenu dépasse */}

@@ -1,10 +1,7 @@
 'use client';
 
 import Image from 'next/image';
-import { Button } from '@/components/ui/button';
-import { ShoppingCart } from 'lucide-react';
-import { addItemToCart } from '@/actions/cartActions'; // Import server action
-import { useToast } from '@/hooks/use-toast'; // Assuming a toast hook exists
+import { AddToCartButton } from '@/components/ui/add-to-cart-button';
 
 // Define Product type (should match definition in profile/page.tsx or a shared types file)
 interface Product {
@@ -16,43 +13,6 @@ interface Product {
 }
 
 export default function ProductCardClient({ product }: { product: Product }) {
-  const { toast } = useToast(); // For user feedback
-
-  const handleAddToCart = async () => {
-    console.log('ProductCardClient: Adding to cart, product:', JSON.stringify(product, null, 2)); // Log product details
-    if (!product.id) {
-      console.error('ProductCardClient: Product ID is missing for product:', product.name);
-      toast({
-        title: "Error",
-        description: "Product ID is missing.",
-        variant: "destructive",
-      });
-      return;
-    }
-    try {
-      const result = await addItemToCart(product.id, 1); // Add 1 quantity
-      if (result.success) {
-        toast({
-          title: "Success!",
-          description: `${product.name || 'Product'} added to cart.`,
-        });
-      } else {
-        toast({
-          title: "Error",
-          description: result.message || "Could not add item to cart.",
-          variant: "destructive",
-        });
-      }
-    } catch (error) {
-      console.error("Failed to add item to cart:", error);
-      toast({
-        title: "Error",
-        description: "An unexpected error occurred.",
-        variant: "destructive",
-      });
-    }
-  };
-
   if (!product) return null;
 
   return (
@@ -61,9 +21,9 @@ export default function ProductCardClient({ product }: { product: Product }) {
         <Image
           src={product.image_url || "https://picsum.photos/400/300"} // Fallback image
           alt={product.name || "Product Image"}
-          layout="fill"
-          objectFit="cover"
-          className="rounded-t-xl"
+          fill
+          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+          className="rounded-t-xl object-cover"
         />
       </div>
       <div className="p-5 flex flex-col flex-grow">
@@ -77,16 +37,12 @@ export default function ProductCardClient({ product }: { product: Product }) {
           <span className="text-2xl font-bold text-honey">
             {product.price ? `${product.price} د.ت` : "Price not set"}
           </span>
-          <Button 
-            variant="default" 
-            size="lg" 
-            className="bg-honey hover:bg-honey-dark text-white rounded-full group"
-            onClick={handleAddToCart}
-            disabled={!product.id} // Disable if no product ID
-          >
-            <ShoppingCart className="h-5 w-5 mr-2 group-hover:scale-110 transition-transform" />
-            أضف إلى السلة
-          </Button>
+          <AddToCartButton
+            productId={product.id}
+            productName={product.name || "Product"}
+            className="bg-honey hover:bg-honey-dark text-white rounded-full"
+            size="lg"
+          />
         </div>
       </div>
     </div>

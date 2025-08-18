@@ -1,13 +1,15 @@
 import type {Metadata} from 'next';
 import './globals.css';
 import {SidebarProvider} from '@/components/ui/sidebar';
-import {SiteHeader} from '@/components/site-header';
 import {Toaster} from '@/components/ui/toaster';
 import { ChatbotPopup } from '@/components/chatbot-popup';
-import { DebugSession } from '@/components/debug-session';
-import { DebugCookies } from '@/components/debug-cookies';
-import { createClientServer } from '@/lib/supabaseClientServer'; // Import server client
+
+import { createClientServer } from '@/lib/supabase/server'; // Import server client
 import { SessionProvider } from '@/context/SessionProvider'; // Import SessionProvider
+import { ConditionalHeader } from '@/components/conditional-header';
+import { ConditionalMain } from '@/components/conditional-main';
+import { ConditionalProviders } from '@/components/conditional-providers';
+
 
 export const metadata: Metadata = {
   title: {
@@ -50,19 +52,20 @@ export default async function RootLayout({
       <body className="min-h-screen bg-honey-light text-foreground antialiased">
         {/* Wrap content with SessionProvider, passing the server session */}
         <SessionProvider serverSession={session}>
-          <DebugSession /> {/* Debug components can remain */}
-          <DebugCookies />
-          <SidebarProvider>
-            <div className="flex flex-col min-h-screen w-full !max-w-none">
-              <SiteHeader />
-              <main className="flex-1 py-8 w-full !max-w-none">
-                 {children}
-                 {/* Footer component will go here */}
-                 <ChatbotPopup /> {/* Add ChatbotPopup component */}
-              </main> {/* Corrected: Removed duplicate closing tag */}
-            </div>
-          </SidebarProvider>
-          <Toaster />
+          <ConditionalProviders>
+
+            <SidebarProvider>
+              <div className="flex flex-col min-h-screen w-full !max-w-none">
+                <ConditionalHeader />
+                <ConditionalMain>
+                   {children}
+                   {/* Footer component will go here */}
+                   <ChatbotPopup /> {/* Add ChatbotPopup component */}
+                </ConditionalMain>
+              </div>
+            </SidebarProvider>
+            <Toaster />
+          </ConditionalProviders>
         </SessionProvider>
       </body>
     </html>

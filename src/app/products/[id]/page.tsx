@@ -1,7 +1,7 @@
 
 
-export default function ProductDetailPage({ params }: { params: { id: string } }) {
-  const productId = params.id;
+export default async function ProductDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id: productId } = await params;
 
   return (
     <div className="container mx-auto py-10">

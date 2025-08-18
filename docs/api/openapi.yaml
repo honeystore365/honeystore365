@@ -1,0 +1,497 @@
+openapi: 3.0.3
+info:
+  title: مناحل الرحيق (Manahal Al-Rahiq) API
+  description: |
+    API documentation for the مناحل الرحيق (Manahal Al-Rahiq) e-commerce platform.
+    This API provides endpoints for managing products, carts, orders, and user authentication.
+  version: 1.0.0
+  contact:
+    name: Manahal Al-Rahiq Support
+    email: support@manahal-alrahiq.com
+
+servers:
+  - url: https://manahal-alrahiq.com/api
+    description: Production server
+  - url: https://staging.manahal-alrahiq.com/api
+    description: Staging server
+  - url: http://localhost:3000/api
+    description: Local development server
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token obtained from authentication
+
+  schemas:
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+          description: Error code
+          example: CART_ITEM_NOT_FOUND
+        message:
+          type: string
+          description: Human-readable error message
+          example: Cart item not found
+      required:
+        - code
+        - message
+
+    Product:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique product identifier
+        name:
+          type: string
+          description: Product name
+        description:
+          type: string
+          nullable: true
+          description: Product description
+        price:
+          type: number
+          format: float
+          description: Product price
+        stock:
+          type: integer
+          description: Available stock quantity
+        image_url:
+          type: string
+          nullable: true
+          description: URL to product image
+      required:
+        - id
+        - name
+        - price
+        - stock
+
+    CartItem:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique cart item identifier
+        cart_id:
+          type: string
+          format: uuid
+          description: Cart identifier
+        product_id:
+          type: string
+          format: uuid
+          description: Product identifier
+        quantity:
+          type: integer
+          description: Quantity of the product in cart
+        created_at:
+          type: string
+          format: date-time
+          description: Creation timestamp
+      required:
+        - id
+        - cart_id
+        - product_id
+        - quantity
+
+    Cart:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique cart identifier
+        customer_id:
+          type: string
+          format: uuid
+          description: Customer identifier
+        created_at:
+          type: string
+          format: date-time
+          description: Creation timestamp
+        updated_at:
+          type: string
+          format: date-time
+          description: Last update timestamp
+      required:
+        - id
+        - customer_id
+        - created_at
+        - updated_at
+
+    AddToCartRequest:
+      type: object
+      properties:
+        product_id:
+          type: string
+          format: uuid
+          description: Product identifier
+        quantity:
+          type: integer
+          minimum: 1
+          maximum: 100
+          description: Quantity to add to cart
+      required:
+        - product_id
+        - quantity
+
+    AddToCartResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          description: Success message
+          example: Product added to cart
+        item:
+          $ref: '#/components/schemas/CartItem'
+        product:
+          type: object
+          properties:
+            id:
+              type: string
+              format: uuid
+            name:
+              type: string
+            price:
+              type: number
+              format: float
+          required:
+            - id
+            - name
+            - price
+
+    UpdateRoleRequest:
+      type: object
+      properties:
+        user_id:
+          type: string
+          format: uuid
+          description: User identifier
+        role:
+          type: string
+          enum: [customer, admin, moderator]
+          description: New role to assign
+      required:
+        - user_id
+        - role
+
+    UpdateRoleResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          description: Success message
+          example: User role updated successfully
+        user:
+          type: object
+          properties:
+            id:
+              type: string
+              format: uuid
+            email:
+              type: string
+              format: email
+            role:
+              type: string
+              enum: [customer, admin, moderator]
+          required:
+            - id
+            - email
+            - role
+
+paths:
+  /cart/add:
+    post:
+      summary: Add item to cart
+      description: Adds a product to the user's cart or updates quantity if already exists
+      operationId: addToCart
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddToCartRequest'
+      responses:
+        '200':
+          description: Item added to cart successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AddToCartResponse'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                validation_error:
+                  value:
+                    code: VALIDATION_ERROR
+                    message: Quantity must be at least 1
+                insufficient_stock:
+                  value:
+                    code: INSUFFICIENT_STOCK
+                    message: Insufficient stock. Available: 5
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                code: UNAUTHORIZED
+                message: Authentication required
+        '404':
+          description: Product not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                code: PRODUCT_NOT_FOUND
+                message: Product not found
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                code: CART_ADD_ERROR
+                message: Failed to add item to cart
+
+  /cart/remove:
+    post:
+      summary: Remove item from cart
+      description: Removes an item from the user's cart
+      operationId: removeFromCart
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                cart_item_id:
+                  type: string
+                  format: uuid
+                  description: Cart item identifier
+              required:
+                - cart_item_id
+      responses:
+        '200':
+          description: Item removed from cart successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Item removed from cart
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Cart item not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                code: CART_ITEM_NOT_FOUND
+                message: Cart item not found
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /cart/update:
+    post:
+      summary: Update cart item quantity
+      description: Updates the quantity of an item in the user's cart
+      operationId: updateCartItem
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                cart_item_id:
+                  type: string
+                  format: uuid
+                  description: Cart item identifier
+                quantity:
+                  type: integer
+                  minimum: 1
+                  description: New quantity
+              required:
+                - cart_item_id
+                - quantity
+      responses:
+        '200':
+          description: Cart item quantity updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Cart item quantity updated
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                validation_error:
+                  value:
+                    code: VALIDATION_ERROR
+                    message: Quantity must be at least 1
+                insufficient_stock:
+                  value:
+                    code: INSUFFICIENT_STOCK
+                    message: Insufficient stock. Available: 5
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Cart item not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /cart/view:
+    get:
+      summary: View cart contents
+      description: Retrieves the contents of the user's cart
+      operationId: viewCart
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Cart contents retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                          format: uuid
+                        quantity:
+                          type: integer
+                        product:
+                          $ref: '#/components/schemas/Product'
+                  total:
+                    type: number
+                    format: float
+                    description: Total cart value
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /admin/update-role:
+    post:
+      summary: Update user role
+      description: Updates a user's role (admin only)
+      operationId: updateUserRole
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateRoleRequest'
+      responses:
+        '200':
+          description: User role updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UpdateRoleResponse'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden - Insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                code: INSUFFICIENT_PERMISSIONS
+                message: Admin role required
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'

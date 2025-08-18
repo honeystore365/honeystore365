@@ -1,6 +1,7 @@
 import Image from 'next/image';
-import { createClientServer } from '@/lib/supabaseClientServer';
+import { createClientServer } from '@/lib/supabase/server';
 import { Button } from '@/components/ui/button';
+import { AddToCartButton } from '@/components/ui/add-to-cart-button';
 import Link from 'next/link';
 
 // Define Product type based on expected data
@@ -91,9 +92,11 @@ export default async function Home() {
                     <span className="text-xl font-bold text-honey">
                       {product.price ? `${product.price.toFixed(2)} د.ت` : 'السعر غير متاح'}
                     </span>
-                    <Button className="bg-honey hover:bg-honey-dark text-white font-bold py-2 px-6 rounded-full transition-colors duration-300">
-                      أضف إلى السلة
-                    </Button>
+                    <AddToCartButton
+                      productId={product.id}
+                      productName={product.name || "Product"}
+                      className="bg-honey hover:bg-honey-dark text-white font-bold py-2 px-6 rounded-full transition-colors duration-300"
+                    />
                   </div>
                 </div>
               </div>

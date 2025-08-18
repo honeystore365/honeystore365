@@ -2,9 +2,9 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-// Assurez-vous que '@/lib/supabaseClient' initialise un client Supabase
+// Assurez-vous que '@/lib/supabase/client' initialise un client Supabase
 // adapté à l'utilisation côté client dans un composant 'use client'.
-import { createClientComponent } from '@/lib/supabaseClient';
+import { createClientComponent } from '@/lib/supabase/client';
 import { DataTable } from '@/components/data-table'; // Assurez-vous que ce composant existe
 // import AdminLayout from '../layout'; // Commenté si le layout est géré au niveau du dossier
 import { Button } from '@/components/ui/button'; // Assurez-vous que ce composant existe

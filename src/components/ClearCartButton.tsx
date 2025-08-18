@@ -3,6 +3,7 @@
 import { Button } from '@/components/ui/button';
 import { clearCart } from '@/actions/cartActions';
 import { useToast } from '@/hooks/use-toast';
+import { useCart } from '@/context/CartProvider';
 import { Trash2Icon } from 'lucide-react';
 import { useState } from 'react';
 
@@ -13,6 +14,7 @@ interface ClearCartButtonProps {
 
 export default function ClearCartButton({ className, onCartCleared }: ClearCartButtonProps) {
   const { toast } = useToast();
+  const { refreshCart } = useCart();
   const [isClearing, setIsClearing] = useState(false);
 
   const handleClearCart = async () => {
@@ -25,6 +27,8 @@ export default function ClearCartButton({ className, onCartCleared }: ClearCartB
           description: 'Cart has been cleared.',
         });
         onCartCleared?.(); // Call the callback on success
+        // Refresh the cart context to update the badge
+        await refreshCart();
       } else {
         toast({
           title: 'Error',

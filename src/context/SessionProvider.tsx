@@ -2,7 +2,8 @@
 
 import React, { createContext, useState, useEffect, useContext, ReactNode } from 'react';
 import type { Session } from '@supabase/supabase-js';
-import { createClientComponent } from '@/lib/supabaseClient'; // Use client component client
+import { createClient } from '@/lib/supabase/client';
+import { logger } from '@/lib/logger';
 
 type SessionContextType = {
   session: Session | null;
@@ -20,7 +21,7 @@ export function SessionProvider({ children, serverSession }: SessionProviderProp
   const [session, setSession] = useState<Session | null>(serverSession);
   // If serverSession is null, we might be waiting for client-side hydration to confirm session status
   const [loading, setLoading] = useState(serverSession === null); 
-  const supabase = createClientComponent();
+  const supabase = createClient();
 
   useEffect(() => {
     // This effect runs on the client after initial render.
@@ -35,8 +36,13 @@ export function SessionProvider({ children, serverSession }: SessionProviderProp
     let initialStateProcessed = serverSession !== null;
 
     const { data: authListener } = supabase.auth.onAuthStateChange(
-      (_event, currentSession) => {
-        console.log("Auth state changed on client:", _event, currentSession);
+      (_event: any, currentSession: any) => {
+        logger.debug("Auth state changed on client", {
+          component: 'SessionProvider',
+          event: _event,
+          hasSession: !!currentSession,
+          userId: currentSession?.user?.id
+        });
         setSession(currentSession);
         if (!initialStateProcessed) {
           setLoading(false);

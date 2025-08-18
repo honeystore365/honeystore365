@@ -1,4 +1,4 @@
-import { createClientServer } from '@/lib/supabaseClientServer';
+import { createClientServer } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 // Image, Button, ShoppingCart will be used in ProductCardClient
 import ProductCardClient from '@/components/ProductCardClient'; // Import the new client component
@@ -146,7 +146,7 @@ export default async function ProfilePage() {
         Example server action for sign out (add to src/actions/authActions.ts):
         
         'use server';
-        import { createClientServer } from '@/lib/supabaseClientServer';
+        import { createClientServer } from '@/lib/supabase/server';
         import { redirect } from 'next/navigation';
 
         export async function signOutAction() { // Renamed to avoid conflict if signOut exists
