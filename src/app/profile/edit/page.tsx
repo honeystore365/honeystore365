@@ -1,9 +1,9 @@
 import ProfileForm from '@/components/ProfileForm';
-import { createClientServerReadOnly } from '@/lib/supabaseServerReadOnly';
+import { createClientServer } from '@/lib/supabase';
 import { redirect } from 'next/navigation';
 
 export default async function ProfileEditPage() {
-  const supabase = await createClientServerReadOnly();
+  const supabase = await createClientServer();
 
   // Get the current user
   const {

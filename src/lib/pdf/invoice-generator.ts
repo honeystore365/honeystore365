@@ -1,7 +1,10 @@
 // Générateur de facture PDF conforme aux normes comptables tunisiennes/françaises
 // Utilise Puppeteer pour créer un vrai PDF
 
-import puppeteer from 'puppeteer';
+import puppeteer from 'puppeteer-core';
+
+// Déclaration dynamique pour éviter les erreurs TypeScript
+declare const chromium: any;
 
 interface OrderData {
   id: string;
@@ -54,18 +57,53 @@ export async function generateInvoicePDF(order: OrderData): Promise<Buffer> {
   try {
     console.log('🚀 Démarrage de Puppeteer...');
     
-    // Lancer Puppeteer avec des options optimisées
+    // Lancer Puppeteer avec des options optimisées pour Vercel
+    const args = process.env.VERCEL ? [
+      '--no-sandbox',
+      '--disable-setuid-sandbox',
+      '--disable-dev-shm-usage',
+      '--disable-accelerated-2d-canvas',
+      '--no-first-run',
+      '--no-zygote',
+      '--disable-gpu',
+      '--disable-extensions',
+      '--disable-plugins',
+      '--disable-images',
+      '--disable-javascript-harmony-modules',
+      '--disable-features=site-per-process',
+      '--disable-background-timer-throttling',
+      '--disable-renderer-backgrounding',
+      '--disable-backgrounding-occluded-windows',
+      '--disable-client-side-phishing-detection',
+      '--disable-crash-reporter',
+      '--disable-features=TranslateUI',
+      '--disable-ipc-flooding-protection',
+      '--disable-popup-blocking',
+      '--disable-prompt-on-repost',
+      '--disable-renderer-backgrounding',
+      '--disable-sync',
+      '--force-color-profile=srgb',
+      '--metrics-recording-only',
+      '--no-zygote',
+      '--safebrowsing-disable-auto-update'
+    ] : [
+      '--no-sandbox',
+      '--disable-setuid-sandbox',
+      '--disable-dev-shm-usage',
+      '--disable-accelerated-2d-canvas',
+      '--no-first-run',
+      '--no-zygote',
+      '--disable-gpu'
+    ];
+
     browser = await puppeteer.launch({
       headless: true,
-      args: [
-        '--no-sandbox',
-        '--disable-setuid-sandbox',
-        '--disable-dev-shm-usage',
-        '--disable-accelerated-2d-canvas',
-        '--no-first-run',
-        '--no-zygote',
-        '--disable-gpu'
-      ]
+      args,
+      defaultViewport: {
+        width: 794,
+        height: 1123,
+        deviceScaleFactor: 2
+      }
     });
     
     const page = await browser.newPage();

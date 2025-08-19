@@ -1,5 +1,7 @@
-import { supabase } from '@/lib/supabaseClient';
+import { createClient } from '@/lib/supabase';
 import { NextResponse } from 'next/server';
+
+const supabase = createClient();
 
 // Define types based on your Supabase schema
 interface Product {

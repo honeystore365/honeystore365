@@ -1,4 +1,4 @@
-import { createClientServerReadOnly } from '@/lib/supabaseServerReadOnly';
+import { createClientServerReadOnly } from '@/lib/supabase/server-readonly';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(request: NextRequest) {
