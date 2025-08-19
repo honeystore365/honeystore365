@@ -9,6 +9,8 @@ import { SessionProvider } from '@/context/SessionProvider'; // Import SessionPr
 import { ConditionalHeader } from '@/components/conditional-header';
 import { ConditionalMain } from '@/components/conditional-main';
 import { ConditionalProviders } from '@/components/conditional-providers';
+import { Analytics } from '@vercel/analytics/react';
+import { SpeedInsights } from '@vercel/speed-insights/next';
 
 
 export const metadata: Metadata = {
@@ -67,6 +69,8 @@ export default async function RootLayout({
             <Toaster />
           </ConditionalProviders>
         </SessionProvider>
+        <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );
