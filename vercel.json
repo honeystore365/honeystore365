@@ -8,9 +8,6 @@
   "functions": {
     "src/app/api/**/*.ts": {
       "maxDuration": 30
-    },
-    "app/api/admin/**/*.ts": {
-      "maxDuration": 45
     }
   },
   "env": {
@@ -29,41 +26,6 @@
     "NEXT_PUBLIC_SENTRY_DSN": "@next_public_sentry_dsn",
     "SENTRY_ORG": "@sentry_org",
     "SENTRY_PROJECT": "@sentry_project",
-    "SENTRY_AUTH_TOKEN": "@sentry_auth_token",
-    "VERCEL": "1"
-  },
-  "headers": [
-    {
-      "source": "/(.*)",
-      "headers": [
-        {
-          "key": "X-Frame-Options",
-          "value": "DENY"
-        },
-        {
-          "key": "X-Content-Type-Options",
-          "value": "nosniff"
-        },
-        {
-          "key": "Referrer-Policy",
-          "value": "origin-when-cross-origin"
-        },
-        {
-          "key": "X-XSS-Protection",
-          "value": "1; mode=block"
-        }
-      ]
-    }
-  ],
-  "rewrites": [
-    {
-      "source": "/api/:path*",
-      "destination": "/api/:path*"
-    }
-  ],
-  "trailingSlash": false,
-  "cleanUrls": true,
-  "experimental": {
-    "serverComponentsExternalPackages": ["@sparticuz/chromium"]
+    "SENTRY_AUTH_TOKEN": "@sentry_auth_token"
   }
 }

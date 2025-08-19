@@ -3,7 +3,7 @@
  */
 
 import { logger } from '@/lib/logger';
-import { createClient } from '@/lib/supabase';
+import { createClientComponent } from '@/lib/supabase/client';
 
 export async function cleanupCorruptedTokens(): Promise<void> {
   try {

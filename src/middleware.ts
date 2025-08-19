@@ -1,5 +1,6 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
+import { isAdminEmail } from '@/lib/auth/admin-auth'
 
 export async function middleware(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
@@ -23,47 +24,46 @@ export async function middleware(request: NextRequest) {
     }
   )
 
-  // Do not run code between createServerClient and
-  // supabase.auth.getUser(). A simple mistake could make it very hard to debug
-  // issues with users being randomly logged out.
-
-  // IMPORTANT: DO NOT REMOVE auth.getUser()
-
   const {
     data: { user },
   } = await supabase.auth.getUser()
 
-  // Check if the user is authenticated and has the 'admin' role
-  const userRole =
-    user?.user_metadata?.role ||
-    user?.user_metadata?.["role"] ||
-    user?.app_metadata?.role ||
-    user?.app_metadata?.["role"];
+  const requestPath = request.nextUrl.pathname;
 
-  if (
-    !user || userRole !== 'admin'
-  ) {
-    // no authenticated admin user, potentially respond by redirecting to the login page
-    const url = request.nextUrl.clone()
-    url.pathname = '/auth/login'
-    // If the user is trying to access an admin path, redirect them
-    if (request.nextUrl.pathname.startsWith('/admin')) {
-        return NextResponse.redirect(url)
+  // Protect admin routes
+  if (requestPath.startsWith('/admin')) {
+    if (!user) {
+      // Not logged in, redirect to the main login page
+      const url = request.nextUrl.clone()
+      url.pathname = '/auth/login'
+      url.searchParams.set('message', 'Please log in to access the admin panel.');
+      url.searchParams.set('redirect', requestPath);
+      return NextResponse.redirect(url)
+    }
+
+    if (!isAdminEmail(user.email || '')) {
+      // Logged in but not an admin, redirect to unauthorized page
+      const url = request.nextUrl.clone()
+      url.pathname = '/unauthorized'
+      return NextResponse.redirect(url)
     }
   }
 
-  // IMPORTANT: You *must* return the supabaseResponse object as it is.
-  // If you're creating a new response object with NextResponse.next() make sure to:
-  // 1. Pass the request in it, like so:
-  //    const myNewResponse = NextResponse.next({ request })
-  // 2. Copy over the cookies, like so:
-  //    myNewResponse.cookies.setAll(supabaseResponse.cookies.getAll())
-  // 3. Change the myNewResponse object to fit your needs, but avoid changing
-  //    the cookies!
-  // 4. Finally:
-  //    return myNewResponse
-  // If this is not done, you may be causing the browser and server to go out
-  // of sync and terminate the user's session prematurely!
+  // Protect admin API routes
+  if (requestPath.startsWith('/api/admin')) {
+    if (!user || !isAdminEmail(user.email || '')) {
+      return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
+    }
+  }
+
+  // Block admin from accessing user cart/checkout
+  if (user && isAdminEmail(user.email || '')) {
+    if (requestPath.startsWith('/cart') || requestPath.startsWith('/checkout')) {
+      const url = request.nextUrl.clone()
+      url.pathname = '/admin' // Redirect to admin dashboard
+      return NextResponse.redirect(url);
+    }
+  }
 
   return supabaseResponse
 }
@@ -78,8 +78,5 @@ export const config = {
      * Feel free to modify this pattern to include more paths.
      */
     '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
-    '/admin/:path*', // Protect admin routes
-    '/auth/login', // Allow access to login page
-    '/auth/register', // Allow access to register page
   ],
 }

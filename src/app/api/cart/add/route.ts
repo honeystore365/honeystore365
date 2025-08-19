@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase';
+import { createClientServer } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 
 // Define types based on your Supabase schema
@@ -17,9 +17,8 @@ interface Cart {
   updated_at: string;
 }
 
-const supabase = createClient();
-
 export async function POST(request: Request) {
+  const supabase = await createClientServer();
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) {

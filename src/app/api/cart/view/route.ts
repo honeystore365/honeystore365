@@ -1,7 +1,5 @@
-import { createClient } from '@/lib/supabase';
+import { createClientServer } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
-
-const supabase = createClient();
 
 // Define types based on your Supabase schema
 interface Product {
@@ -33,6 +31,7 @@ interface Cart {
 
 
 export async function GET(request: Request) {
+  const supabase = await createClientServer();
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) {
