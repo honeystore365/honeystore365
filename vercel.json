@@ -10,19 +10,6 @@
       "maxDuration": 30
     }
   },
-  "redirects": [
-    {
-      "source": "/admin",
-      "destination": "/dashboard",
-      "permanent": false
-    }
-  ],
-  "rewrites": [
-    {
-      "source": "/api/health",
-      "destination": "/api/health-check"
-    }
-  ],
   "headers": [
     {
       "source": "/(.*)",
