@@ -10,22 +10,31 @@
       "maxDuration": 30
     }
   },
-  "env": {
-    "NODE_ENV": "production",
-    "NEXT_PUBLIC_APP_NAME": "مناحل الرحيق",
-    "NEXT_PUBLIC_SITE_URL": "https://your-domain.com",
-    "NEXT_PUBLIC_ENABLE_ANALYTICS": "true",
-    "NEXT_PUBLIC_ENABLE_CHATBOT": "true",
-    "NEXT_PUBLIC_ENABLE_A11Y": "true",
-    "NEXT_PUBLIC_SUPABASE_URL": "@next_public_supabase_url",
-    "NEXT_PUBLIC_SUPABASE_ANON_KEY": "@next_public_supabase_anon_key",
-    "SUPABASE_SERVICE_ROLE_KEY": "@supabase_service_role_key",
-    "JWT_SECRET": "@jwt_secret",
-    "NEXTAUTH_SECRET": "@nextauth_secret",
-    "UPLOADTHING_TOKEN": "@uploadthing_token",
-    "NEXT_PUBLIC_SENTRY_DSN": "@next_public_sentry_dsn",
-    "SENTRY_ORG": "@sentry_org",
-    "SENTRY_PROJECT": "@sentry_project",
-    "SENTRY_AUTH_TOKEN": "@sentry_auth_token"
-  }
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "DENY"
+        },
+        {
+          "key": "X-XSS-Protection",
+          "value": "1; mode=block"
+        },
+        {
+          "key": "Strict-Transport-Security",
+          "value": "max-age=63072000; includeSubDomains; preload"
+        },
+        {
+          "key": "Content-Security-Policy",
+          "value": "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline';"
+        }
+      ]
+    }
+  ]
 }
