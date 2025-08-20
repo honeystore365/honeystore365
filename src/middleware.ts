@@ -3,8 +3,9 @@ import type { NextRequest } from 'next/server'
 
 export async function middleware(request: NextRequest) {
   // Récupérer le token depuis les cookies
-  const token = request.cookies.get('sb-access-token')?.value || 
-                request.cookies.get('supabase-auth-token')?.value
+  const token = request.cookies.get('sb-access-token')?.value ||
+                request.cookies.get('supabase-auth-token')?.value ||
+                request.cookies.get('sb-llsifflkfjogjagmbmpi-auth-token.0')?.value
 
   const isLoggedIn = !!token
   const isOnAuthPage = request.nextUrl.pathname === '/login' || 
@@ -12,9 +13,9 @@ export async function middleware(request: NextRequest) {
   const isOnProtectedPage = request.nextUrl.pathname.startsWith('/dashboard') || 
                            request.nextUrl.pathname.startsWith('/admin')
 
-  // Si l'utilisateur est connecté et sur une page d'auth, rediriger vers dashboard
+  // Si l'utilisateur est connecté et sur une page d'auth, rediriger vers admin
   if (isLoggedIn && isOnAuthPage) {
-    return NextResponse.redirect(new URL('/dashboard', request.url))
+    return NextResponse.redirect(new URL('/admin', request.url))
   }
 
   // Si l'utilisateur n'est pas connecté et sur une page protégée, rediriger vers login

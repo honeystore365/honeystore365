@@ -58,6 +58,7 @@ export default function LoginPage() {
                   name="password"
                   className="h-12 text-base"
                   required
+                  autoComplete="current-password"
                 />
               </div>
 
