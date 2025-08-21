@@ -1,7 +1,7 @@
 "use client";
 
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { useEffect, useState } from 'react';
+import { createClientComponent } from '@/lib/supabaseClient';
 
 interface Order {
   id: string;
@@ -11,7 +11,7 @@ interface Order {
 
 const PdfList = () => {
   const [orders, setOrders] = useState<Order[]>([]);
-  const supabase = createClientComponentClient();
+  const supabase = createClientComponent();
 
   useEffect(() => {
     const fetchOrders = async () => {
