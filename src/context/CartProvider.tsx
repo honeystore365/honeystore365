@@ -5,6 +5,7 @@ import { createBrowserClient } from '@supabase/ssr';
 import { createContext, ReactNode, useContext, useEffect, useState } from 'react';
 import { useSession } from './SessionProvider';
 import { isAdminEmail } from '@/lib/auth/admin-auth';
+import { logger } from '@/lib/logger';
 
 interface CartContextType {
   cart: Cart | null;
@@ -38,7 +39,7 @@ export function CartProvider({ children }: CartProviderProps) {
   
   // Debug logging
   if (process.env.NODE_ENV === 'development') {
-    console.log('CartProvider - cartItemCount calculation:', {
+    logger.debug('CartProvider - cartItemCount calculation:', {
       cart: cart?.id,
       itemsLength: cart?.items?.length,
       cartItemCount,
@@ -168,7 +169,7 @@ export function CartProvider({ children }: CartProviderProps) {
         } as any);
       }
     } catch (err) {
-      console.error('Erreur lors du chargement du panier:', err);
+      logger.error('Error loading cart:', err as Error, { userId: session?.user?.id });
       setError('Erreur lors du chargement du panier');
       setCart(null);
     } finally {
@@ -227,7 +228,7 @@ export function CartProvider({ children }: CartProviderProps) {
       await loadCart();
       return true;
     } catch (err) {
-      console.error("Erreur lors de l'ajout:", err);
+      logger.error('Error adding to cart:', err as Error, { userId: session?.user?.id, productId, quantity });
       setError("Erreur lors de l'ajout au panier");
       return false;
     } finally {
@@ -263,7 +264,7 @@ export function CartProvider({ children }: CartProviderProps) {
       await loadCart();
       return true;
     } catch (err) {
-      console.error('Erreur lors de la mise à jour:', err);
+      logger.error('Error updating cart item:', err as Error, { userId: session?.user?.id, itemId, quantity });
       setError('Erreur lors de la mise à jour');
       return false;
     }
@@ -292,7 +293,7 @@ export function CartProvider({ children }: CartProviderProps) {
       await loadCart();
       return true;
     } catch (err) {
-      console.error('Erreur lors de la suppression:', err);
+      logger.error('Error removing from cart:', err as Error, { userId: session?.user?.id, itemId });
       setError('Erreur lors de la suppression');
       return false;
     }
@@ -315,7 +316,7 @@ export function CartProvider({ children }: CartProviderProps) {
       await loadCart();
       return true;
     } catch (err) {
-      console.error('Erreur lors du vidage:', err);
+      logger.error('Error clearing cart:', err as Error, { userId: session?.user?.id, cartId: cart?.id });
       setError('Erreur lors du vidage du panier');
       return false;
     }
@@ -352,7 +353,7 @@ export function useCart() {
   if (context === undefined) {
     // En mode développement, afficher un warning au lieu de lancer une erreur
     if (process.env.NODE_ENV === 'development') {
-      console.warn('useCart must be used within a CartProvider. Returning default values.');
+      logger.warn('useCart must be used within a CartProvider. Returning default values.');
     }
 
     // Retourner des valeurs par défaut au lieu de lancer une erreur
