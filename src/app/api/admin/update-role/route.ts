@@ -1,13 +1,16 @@
 // src/app/api/admin/update-role/route.ts
 import { createClient } from '@supabase/supabase-js';
 import { NextResponse, type NextRequest } from 'next/server';
+import { createServerClient } from '@supabase/ssr';
+import { isAdminEmail } from '@/lib/auth/admin-auth';
+import { logger } from '@/lib/logger';
 
 // !! Assurez-vous que ces variables d'environnement sont définies côté serveur !!
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 if (!supabaseUrl || !serviceRoleKey) {
-  console.error("Supabase URL or Service Role Key is missing in server environment variables.");
+  logger.error("Supabase URL or Service Role Key is missing in server environment variables.");
   // Ne pas initialiser le client si les clés manquent
 }
 
@@ -16,12 +19,31 @@ if (!supabaseUrl || !serviceRoleKey) {
 const supabaseAdmin = createClient(supabaseUrl!, serviceRoleKey!);
 
 export async function POST(request: NextRequest) {
-  // TODO: Ajouter une vérification ici pour s'assurer que seul un admin authentifié peut appeler cette route !
-  // Exemple :
-  // const { data: { user }, error: getUserError } = await supabase.auth.getUser(); // Utiliser le client standard pour vérifier l'appelant
-  // if (getUserError || !user || user.user_metadata?.role !== 'admin') {
-  //   return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  // }
+  let supabaseResponse = NextResponse.next({ request });
+
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll()
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value, options }) =>
+            supabaseResponse.cookies.set(name, value, options)
+          );
+        },
+      },
+    }
+  );
+
+  const { data: { user }, error: getUserError } = await supabase.auth.getUser();
+
+  if (getUserError || !user || !isAdminEmail(user.email || '')) {
+    logger.warn('Unauthorized attempt to update user role', { userId: user?.id, userEmail: user?.email });
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+  }
 
   if (!supabaseUrl || !serviceRoleKey) {
      return NextResponse.json({ error: 'Server configuration error' }, { status: 500 });
@@ -34,7 +56,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Missing userId or newRole in request body' }, { status: 400 });
     }
 
-    console.log(`Attempting to update role for user ${userId} to ${newRole}`);
+    logger.info(`Admin ${user.email} is attempting to update role for user ${userId} to ${newRole}`);
 
     const { data, error } = await supabaseAdmin.auth.admin.updateUserById(
       userId,
@@ -42,15 +64,15 @@ export async function POST(request: NextRequest) {
     );
 
     if (error) {
-      console.error(`Error updating role for user ${userId}:`, error.message);
+      logger.error(`Error updating role for user ${userId}`, error, { adminUser: user.email });
       return NextResponse.json({ error: error.message || 'Failed to update user role' }, { status: 500 });
     }
 
-    console.log(`User role updated successfully for user ${userId}:`, data.user);
+    logger.info(`User role updated successfully for user ${userId} by admin ${user.email}`);
     return NextResponse.json({ message: 'User role updated successfully', user: data.user });
 
   } catch (e: any) {
-    console.error("Error processing request:", e);
+    logger.error("Error processing update-role request", e, { adminUser: user.email });
     return NextResponse.json({ error: e.message || 'Internal Server Error' }, { status: 500 });
   }
 }

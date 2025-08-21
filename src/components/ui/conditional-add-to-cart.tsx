@@ -5,6 +5,7 @@ import { AddToCartButton } from './add-to-cart-button';
 
 interface ConditionalAddToCartProps {
   productId: string;
+  productName: string;
   quantity?: number;
   variant?: 'default' | 'outline' | 'secondary';
   size?: 'sm' | 'md' | 'lg';
@@ -14,6 +15,7 @@ interface ConditionalAddToCartProps {
 
 export function ConditionalAddToCart({ 
   productId, 
+  productName,
   quantity = 1, 
   variant = 'default',
   size = 'md',
@@ -49,7 +51,7 @@ export function ConditionalAddToCart({
   return (
     <AddToCartButton
       productId={productId}
-      productName="Product" // TODO: Pass actual product name
+      productName={productName}
       variant={variant}
       size={mappedSize}
       className={className}
