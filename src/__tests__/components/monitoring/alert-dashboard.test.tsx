@@ -1,6 +1,10 @@
 import { AlertDashboard } from '@/components/monitoring/AlertDashboard';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { axe } from 'jest-axe';
+import { setupComponentTest } from '../../utils/test-env-setup';
+
+// Setup the test environment
+setupComponentTest();
 
 // Mock the alerts API
 jest.mock('@/lib/monitoring/alerts', () => ({

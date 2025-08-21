@@ -15,6 +15,7 @@ __tests__/
 │   └── supabase.ts   # Mocks pour Supabase
 ├── unit/             # Tests unitaires (services, utilitaires)
 └── utils/            # Utilitaires de test
+    ├── test-env-setup.ts  # Configuration de l'environnement de test
     └── test-utils.ts      # Fonctions utilitaires pour les tests
 ```
 
@@ -48,6 +49,10 @@ Les tests unitaires testent des fonctions ou des classes individuelles de
 manière isolée.
 
 ```typescript
+import { setupUnitTest } from '../utils/test-env-setup';
+
+// Configuration de l'environnement de test
+setupUnitTest();
 
 describe('MonService', () => {
   it('devrait faire quelque chose', () => {
@@ -64,7 +69,11 @@ Les tests de composants testent le rendu et le comportement des composants
 React.
 
 ```typescript
+import { setupComponentTest } from '../utils/test-env-setup';
 import { render, screen } from '../utils/test-utils';
+
+// Configuration de l'environnement de test
+setupComponentTest();
 
 describe('MonComposant', () => {
   it('devrait rendre correctement', () => {
@@ -83,6 +92,10 @@ Les tests d'intégration testent l'interaction entre plusieurs parties du
 système.
 
 ```typescript
+import { setupIntegrationTest } from '../utils/test-env-setup';
+
+// Configuration de l'environnement de test
+setupIntegrationTest();
 
 describe('API', () => {
   it('devrait retourner des données', async () => {

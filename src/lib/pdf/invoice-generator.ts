@@ -2,7 +2,6 @@
 // Utilise Puppeteer pour créer un vrai PDF
 
 import puppeteer from 'puppeteer';
-import { logger } from '@/lib/logger';
 
 interface OrderData {
   id: string;
@@ -53,7 +52,7 @@ export async function generateInvoicePDF(order: OrderData): Promise<Buffer> {
   let browser;
   
   try {
-    logger.info('🚀 Starting Puppeteer for invoice generation...');
+    console.log('🚀 Démarrage de Puppeteer...');
     
     // Lancer Puppeteer avec des options optimisées
     browser = await puppeteer.launch({
@@ -73,7 +72,7 @@ export async function generateInvoicePDF(order: OrderData): Promise<Buffer> {
     
     // Générer le HTML de la facture
     const htmlContent = generateInvoiceHTML(order);
-    logger.info('📄 HTML generated, converting to PDF...');
+    console.log('📄 HTML généré, conversion en PDF...');
     
     // Charger le HTML dans la page
     await page.setContent(htmlContent, { 
@@ -95,16 +94,16 @@ export async function generateInvoicePDF(order: OrderData): Promise<Buffer> {
       preferCSSPageSize: true
     });
     
-    logger.info('✅ PDF generated successfully');
+    console.log('✅ PDF généré avec succès');
     return Buffer.from(pdfBuffer);
     
   } catch (error) {
-    logger.error('❌ PDF generation failed', error as Error, { orderId: order.id });
+    console.error('❌ Erreur génération PDF:', error);
     throw new Error(`Impossible de générer la facture PDF: ${error instanceof Error ? error.message : String(error)}`);
   } finally {
     if (browser) {
       await browser.close();
-      logger.info('🔒 Puppeteer closed');
+      console.log('🔒 Puppeteer fermé');
     }
   }
 }

@@ -2,6 +2,10 @@ import { DataTable } from '@/components/data-table';
 import { ColumnDef } from '@tanstack/react-table';
 import { render, screen } from '@testing-library/react';
 import { axe } from 'jest-axe';
+import { setupComponentTest } from '../utils/test-env-setup';
+
+// Setup the test environment
+setupComponentTest();
 
 // Define test data and columns
 interface TestData {

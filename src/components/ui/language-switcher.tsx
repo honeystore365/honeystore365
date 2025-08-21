@@ -1,7 +1,6 @@
 'use client';
 
 // import { useLocaleSwitch } from '@/lib/i18n/hooks'; // TODO: Implement useLocaleSwitch hook
-import { logger } from '@/lib/logger';
 import { Globe } from 'lucide-react';
 import { Button } from './button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from './dropdown-menu';
@@ -15,7 +14,7 @@ interface LanguageSwitcherProps {
 export function LanguageSwitcher({ variant = 'dropdown', showIcon = true, className }: LanguageSwitcherProps) {
   // TODO: Implement useLocaleSwitch hook
   const currentLocale = 'ar';
-  const switchLocale = (locale: string) => logger.debug(`Switching to locale: ${locale}`);
+  const switchLocale = (locale: string) => console.log('Switch to:', locale);
   const availableLocales = ['ar', 'en'];
 
   const localeLabels: Record<string, string> = {

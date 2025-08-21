@@ -1,3 +1,7 @@
+import { setupUnitTest } from '../utils/test-env-setup';
+
+// Setup the test environment
+setupUnitTest();
 
 // Simple validation function to test
 function validateEmail(email: string): boolean {

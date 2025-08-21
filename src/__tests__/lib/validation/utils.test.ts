@@ -21,6 +21,10 @@ import {
     validateUrl,
 } from '@/lib/validation/utils';
 import { z } from 'zod';
+import { setupUnitTest } from '../../utils/test-env-setup';
+
+// Setup the test environment
+setupUnitTest();
 
 describe('Validation Utils', () => {
   describe('validateEmail', () => {

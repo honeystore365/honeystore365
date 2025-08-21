@@ -1,12 +1,16 @@
 import { DELETE } from '@/app/api/cart/remove/route';
 import { PUT } from '@/app/api/cart/update/route';
 import { GET } from '@/app/api/cart/view/route';
+import { setupIntegrationTest } from '../../utils/test-env-setup';
 import { createMockProduct, createMockUser } from '../../utils/test-utils';
 
 // Mock the createClientServer function
-jest.mock('@/lib/supabase/server', () => ({
+jest.mock('@/lib/supabaseClientServer', () => ({
   createClientServer: jest.fn(),
 }));
+
+// Setup the test environment
+setupIntegrationTest();
 
 describe('Cart API Integration Tests', () => {
   let mockSupabase: any;
@@ -23,7 +27,7 @@ describe('Cart API Integration Tests', () => {
       from: jest.fn(),
     };
     
-    (require('@/lib/supabase/server').createClientServer as jest.Mock)
+    (require('@/lib/supabaseClientServer').createClientServer as jest.Mock)
       .mockResolvedValue(mockSupabase);
 
     // Mock request object

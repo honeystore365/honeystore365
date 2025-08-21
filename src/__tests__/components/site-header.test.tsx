@@ -1,6 +1,10 @@
 import { SiteHeader } from '@/components/site-header';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { axe } from 'jest-axe';
+import { setupComponentTest } from '../utils/test-env-setup';
+
+// Setup the test environment
+setupComponentTest();
 
 // Mock the session hook
 jest.mock('@/context/SessionProvider', () => ({

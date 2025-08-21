@@ -1,8 +1,9 @@
 import * as checkoutActions from '@/actions/checkoutActions';
+import { setupIntegrationTest } from '../../utils/test-env-setup';
 import { createMockProduct, createMockUser } from '../../utils/test-utils';
 
 // Mock the createClientServer function
-jest.mock('@/lib/supabase/server', () => ({
+jest.mock('@/lib/supabaseClientServer', () => ({
   createClientServer: jest.fn(),
 }));
 
@@ -33,6 +34,9 @@ jest.mock('next/cookies', () => ({
 jest.mock('next/cache', () => ({
   revalidatePath: jest.fn(),
 }));
+
+// Setup the test environment
+setupIntegrationTest();
 
 describe('Order Workflow Integration Tests', () => {
   let mockSupabase: any;

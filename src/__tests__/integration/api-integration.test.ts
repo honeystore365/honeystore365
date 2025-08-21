@@ -12,7 +12,7 @@ process.env.UPLOADTHING_TOKEN = 'test-uploadthing-token';
 process.env.UPLOADTHING_SECRET = 'test-uploadthing-secret';
 
 // Mock the createClientServer function
-jest.mock('@/lib/supabase/server', () => ({
+jest.mock('@/lib/supabaseClientServer', () => ({
   createClientServer: jest.fn(),
 }));
 
@@ -40,7 +40,7 @@ describe('API Integration Tests', () => {
       from: jest.fn(),
     };
     
-    (require('@/lib/supabase/server').createClientServer as jest.Mock)
+    (require('@/lib/supabaseClientServer').createClientServer as jest.Mock)
       .mockResolvedValue(mockSupabase);
   });
 

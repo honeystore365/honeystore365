@@ -1,6 +1,10 @@
 import { LanguageSwitcher } from '@/components/ui/language-switcher';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { axe } from 'jest-axe';
+import { setupComponentTest } from '../../utils/test-env-setup';
+
+// Setup the test environment
+setupComponentTest();
 
 // Mock the locale switch hook
 jest.mock('@/hooks/use-locale-switch', () => ({
