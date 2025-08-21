@@ -1,9 +1,5 @@
 import { http, HttpResponse } from 'msw';
 import { server } from '../mocks/server';
-import { setupIntegrationTest } from '../utils/test-env-setup';
-
-// Setup the test environment
-setupIntegrationTest();
 
 describe('MSW Integration Tests', () => {
   it('should intercept API requests', async () => {

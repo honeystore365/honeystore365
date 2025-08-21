@@ -1,6 +1,5 @@
 import { ProductServiceImpl } from '@/services/products/products.service';
 import { mockSupabaseClient, resetSupabaseMocks } from '../../mocks/supabase';
-import { setupUnitTest } from '../../utils/test-env-setup';
 import { createMockProduct } from '../../utils/test-utils';
 
 // Mock the logger
@@ -17,9 +16,6 @@ jest.mock('@/lib/logger', () => ({
 jest.mock('@/lib/supabase/server', () => ({
   createClientServer: jest.fn().mockImplementation(() => Promise.resolve(mockSupabaseClient)),
 }));
-
-// Setup the test environment
-setupUnitTest();
 
 describe('ProductService', () => {
   let productService: ProductServiceImpl;

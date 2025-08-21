@@ -1,10 +1,6 @@
 import { MonitoringDashboard } from '@/components/monitoring/MonitoringDashboard';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { axe } from 'jest-axe';
-import { setupComponentTest } from '../../utils/test-env-setup';
-
-// Setup the test environment
-setupComponentTest();
 
 // Mock the monitoring hooks and API
 jest.mock('@/hooks/useMonitoring', () => ({
