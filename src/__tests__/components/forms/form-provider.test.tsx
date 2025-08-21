@@ -3,10 +3,6 @@ import { CancelButton, FormActions, FormProvider, FormSection, SubmitButton } fr
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { axe } from 'jest-axe';
 import { z } from 'zod';
-import { setupComponentTest } from '../../utils/test-env-setup';
-
-// Setup the test environment
-setupComponentTest();
 
 describe('Form Provider Components', () => {
   describe('FormProvider', () => {

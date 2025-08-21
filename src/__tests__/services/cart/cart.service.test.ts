@@ -1,7 +1,6 @@
 import { CartServiceImpl } from '@/services/cart/cart.service';
 import { productService } from '@/services/products/products.service';
 import { mockSupabaseClient, resetSupabaseMocks } from '../../mocks/supabase';
-import { setupUnitTest } from '../../utils/test-env-setup';
 import { createMockProduct } from '../../utils/test-utils';
 
 // Mock the logger
@@ -25,9 +24,6 @@ jest.mock('@/services/products/products.service', () => ({
     getProduct: jest.fn(),
   },
 }));
-
-// Setup the test environment
-setupUnitTest();
 
 describe('CartService', () => {
   let cartService: CartServiceImpl;

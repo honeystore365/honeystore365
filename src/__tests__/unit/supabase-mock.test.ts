@@ -1,8 +1,4 @@
 import { mockSuccessResponse, mockSupabaseClient } from '../mocks/supabase';
-import { setupUnitTest } from '../utils/test-env-setup';
-
-// Setup the test environment
-setupUnitTest();
 
 describe('Supabase Mock Tests', () => {
   it('should mock Supabase client responses', async () => {

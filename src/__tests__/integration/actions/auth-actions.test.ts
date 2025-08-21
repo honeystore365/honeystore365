@@ -1,8 +1,6 @@
 import * as authActions from '@/actions/authActions';
-import { setupIntegrationTest } from '../../utils/test-env-setup';
-
 // Mock the createClientServer function
-jest.mock('@/lib/supabaseClientServer', () => ({
+jest.mock('@/lib/supabase/server', () => ({
   createClientServer: jest.fn().mockImplementation(() => ({
     auth: {
       signInWithPassword: jest.fn().mockResolvedValue({
@@ -44,22 +42,48 @@ jest.mock('next/navigation', () => ({
   redirect: jest.fn(),
 }));
 
-// Setup the test environment
-setupIntegrationTest();
-
 describe('Auth Actions Integration Tests', () => {
+  let createClientServerMock: jest.Mock;
+  let redirectMock: jest.Mock;
+
   beforeEach(() => {
+    // Reset mocks before each test
     jest.clearAllMocks();
+
+    // Setup mock implementations
+    createClientServerMock = jest.requireMock('@/lib/supabase/server').createClientServer;
+    redirectMock = jest.requireMock('next/navigation').redirect;
   });
 
+  const mockSupabaseSignIn = (user: any, error: any) => {
+    createClientServerMock.mockImplementation(() => ({
+      auth: {
+        signInWithPassword: jest.fn().mockResolvedValue({
+          data: { user, session: user ? { access_token: 'mock-token' } : null },
+          error,
+        }),
+        getUser: jest.fn().mockResolvedValue({ data: { user }, error: null }),
+        getSession: jest.fn().mockResolvedValue({ data: { session: user ? { access_token: 'mock-token' } : null }, error: null }),
+      },
+    }));
+  };
+
   describe('signIn', () => {
-    it('should sign in a user successfully', async () => {
+    it('should sign in a user successfully and redirect to profile', async () => {
       // Arrange
-      const input = { email: 'test@example.com', password: 'password123' };
-      const redirectMock = jest.requireMock('next/navigation').redirect;
+      const formData = new FormData();
+      formData.append('email', 'test@example.com');
+      formData.append('password', 'password123');
+
+      const mockUser = {
+        id: 'user-1',
+        email: 'test@example.com',
+        user_metadata: { role: 'customer' },
+      };
+      mockSupabaseSignIn(mockUser, null);
 
       // Act
-      await authActions.signIn(input);
+      await authActions.signIn(formData);
 
       // Assert
       expect(redirectMock).toHaveBeenCalledWith('/profile');
@@ -67,80 +91,39 @@ describe('Auth Actions Integration Tests', () => {
 
     it('should redirect admin users to admin dashboard', async () => {
       // Arrange
-      const input = { email: 'admin@example.com', password: 'admin123' };
-      const redirectMock = jest.requireMock('next/navigation').redirect;
+      const formData = new FormData();
+      formData.append('email', 'admin@example.com');
+      formData.append('password', 'admin123');
       
-      // Mock admin user
-      jest.requireMock('@/lib/supabaseClientServer').createClientServer.mockImplementation(() => ({
-        auth: {
-          signInWithPassword: jest.fn().mockResolvedValue({
-            data: {
-              user: {
-                id: 'admin-1',
-                email: 'admin@example.com',
-                user_metadata: { role: 'admin' },
-              },
-              session: {
-                access_token: 'mock-access-token',
-                refresh_token: 'mock-refresh-token',
-              },
-            },
-            error: null,
-          }),
-        },
-      }));
+      const mockAdminUser = {
+        id: 'admin-1',
+        email: 'admin@example.com',
+        user_metadata: { role: 'admin' },
+      };
+      mockSupabaseSignIn(mockAdminUser, null);
 
       // Act
-      await authActions.signIn(input);
+      await authActions.signIn(formData);
 
       // Assert
       expect(redirectMock).toHaveBeenCalledWith('/admin');
     });
 
-    it('should handle invalid credentials', async () => {
+    it('should handle invalid credentials and redirect to login', async () => {
       // Arrange
-      const input = { email: 'wrong@example.com', password: 'wrongpass' };
-      const redirectMock = jest.requireMock('next/navigation').redirect;
+      const formData = new FormData();
+      formData.append('email', 'wrong@example.com');
+      formData.append('password', 'wrongpass');
       
-      // Mock authentication error
-      jest.requireMock('@/lib/supabaseClientServer').createClientServer.mockImplementation(() => ({
-        auth: {
-          signInWithPassword: jest.fn().mockResolvedValue({
-            data: { user: null, session: null },
-            error: { message: 'Invalid login credentials' },
-          }),
-        },
-      }));
+      mockSupabaseSignIn(null, { message: 'Invalid login credentials' });
 
       // Act
-      await authActions.signIn(input);
+      await authActions.signIn(formData);
 
       // Assert
       expect(redirectMock).toHaveBeenCalledWith(
-        '/auth/login?message=Invalid%20email%20or%20password'
+        '/auth/login?message=Could not authenticate user'
       );
-    });
-  });
-
-  describe('signInFormData', () => {
-    it('should handle form data correctly', async () => {
-      // Arrange
-      const formData = new FormData();
-      formData.append('email', 'test@example.com');
-      formData.append('password', 'password123');
-      
-      // Mock the signIn function
-      const signInSpy = jest.spyOn(authActions, 'signIn')
-        .mockImplementation(async () => {});
-
-      // Act
-      await authActions.signInFormData(formData);
-
-      // Assert
-      expect(signInSpy).toHaveBeenCalledWith({
-        email: 'test@example.com',
-        password: 'password123',
-      });
     });
   });
 });

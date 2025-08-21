@@ -1,10 +1,6 @@
 import { MonitoringProvider, useMonitoring } from '@/components/monitoring/MonitoringProvider';
 import { render, screen } from '@testing-library/react';
 import { axe } from 'jest-axe';
-import { setupComponentTest } from '../../utils/test-env-setup';
-
-// Setup the test environment
-setupComponentTest();
 
 // Mock the pathname hook
 jest.mock('next/navigation', () => ({

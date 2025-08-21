@@ -1,12 +1,13 @@
+import { TextEncoder, TextDecoder } from 'util';
+global.TextEncoder = TextEncoder;
+global.TextDecoder = TextDecoder;
+
+import 'whatwg-fetch';
+import 'web-streams-polyfill/dist/polyfill.js';
 import '@testing-library/jest-dom';
 import 'jest-axe/extend-expect';
+import { server } from './src/__tests__/mocks/server';
 
-// Polyfills for Node.js environment
-if (typeof window === 'undefined') {
-  const { TextEncoder, TextDecoder } = require('util');
-  global.TextEncoder = TextEncoder;
-  global.TextDecoder = TextDecoder;
-}
 
 // Mock Next.js router
 jest.mock('next/router', () => ({
@@ -52,6 +53,8 @@ jest.mock('next/navigation', () => ({
   },
 }));
 
+
+
 // Mock Next.js Image component
 jest.mock('next/image', () => ({
   __esModule: true,
@@ -62,7 +65,7 @@ jest.mock('next/image', () => ({
 }));
 
 // Mock environment variables
-process.env.NODE_ENV = 'development'; // Use development instead of test for config validation
+process.env.NODE_ENV = 'development';
 process.env.NEXT_PUBLIC_SUPABASE_URL = 'http://localhost:54321';
 process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'test-anon-key';
 process.env.SUPABASE_SERVICE_ROLE_KEY = 'test-service-role-key';
@@ -76,42 +79,32 @@ global.ResizeObserver = jest.fn().mockImplementation(() => ({
   disconnect: jest.fn(),
 }));
 
-// Mock IntersectionObserver
 global.IntersectionObserver = jest.fn().mockImplementation(() => ({
   observe: jest.fn(),
   unobserve: jest.fn(),
   disconnect: jest.fn(),
 }));
 
-// Mock matchMedia
 Object.defineProperty(window, 'matchMedia', {
   writable: true,
   value: jest.fn().mockImplementation(query => ({
     matches: false,
     media: query,
     onchange: null,
-    addListener: jest.fn(), // deprecated
-    removeListener: jest.fn(), // deprecated
+    addListener: jest.fn(),
+    removeListener: jest.fn(),
     addEventListener: jest.fn(),
     removeEventListener: jest.fn(),
     dispatchEvent: jest.fn(),
   })),
 });
 
-// Setup MSW server conditionally
-try {
-  // Only import MSW if needed
-  if (process.env.USE_MSW === 'true') {
-    const { server } = require('./src/__tests__/mocks/server');
+// Establish API mocking before all tests.
+beforeAll(() => server.listen({ onUnhandledRequest: 'error' }));
 
-    // Establish API mocking before all tests.
-    beforeAll(() => server.listen({ onUnhandledRequest: 'warn' }));
-    // Reset any request handlers that we may add during the tests,
-    // so they don't affect other tests.
-    afterEach(() => server.resetHandlers());
-    // Clean up after the tests are finished.
-    afterAll(() => server.close());
-  }
-} catch (error) {
-  console.warn('MSW setup failed:', error);
-}
+// Reset any request handlers that we may add during the tests,
+// so they don't affect other tests.
+afterEach(() => server.resetHandlers());
+
+// Clean up after the tests are finished.
+afterAll(() => server.close());

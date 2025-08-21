@@ -1,10 +1,6 @@
 import { ContactForm, QuickContactForm } from '@/components/forms/contact-form';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { axe } from 'jest-axe';
-import { setupComponentTest } from '../../utils/test-env-setup';
-
-// Setup the test environment
-setupComponentTest();
 
 // Mock the error handling hook
 jest.mock('@/hooks/use-error-handling', () => ({
