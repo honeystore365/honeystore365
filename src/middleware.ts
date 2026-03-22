@@ -30,32 +30,23 @@ export async function middleware(request: NextRequest) {
 
   const requestPath = request.nextUrl.pathname;
 
-  console.log(`[Middleware] Path: ${requestPath}`);
-
   // Protect admin routes
   if (requestPath.startsWith('/admin')) {
-    console.log('[Middleware] Admin route detected');
     if (!user) {
-      console.log('[Middleware] No user found, redirecting to login.');
-      // Not logged in, redirect to the main login page
       const url = request.nextUrl.clone()
-      url.pathname = '/auth/login'
+      url.pathname = '/admin/login'
       url.searchParams.set('message', 'Please log in to access the admin panel.');
       url.searchParams.set('redirect', requestPath);
       return NextResponse.redirect(url)
     }
 
     const userIsAdmin = isAdminEmail(user.email || '');
-    console.log(`[Middleware] User: ${user.email}, Is Admin: ${userIsAdmin}`);
 
     if (!userIsAdmin) {
-      console.log('[Middleware] User is not admin, redirecting to unauthorized.');
-      // Logged in but not an admin, redirect to unauthorized page
       const url = request.nextUrl.clone()
       url.pathname = '/unauthorized'
       return NextResponse.redirect(url)
     }
-    console.log('[Middleware] Admin access granted.');
   }
 
   // Protect admin API routes

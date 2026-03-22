@@ -14,7 +14,7 @@ export default getRequestConfig(async ({ locale }) => {
   return {
     locale: locale as string,
     messages: (await import(`./locales/${locale}.json`)).default,
-    timeZone: 'Asia/Riyadh',
+    timeZone: 'Africa/Tunis',
     now: new Date(),
     formats: {
       dateTime: {
@@ -38,7 +38,7 @@ export default getRequestConfig(async ({ locale }) => {
       number: {
         currency: {
           style: 'currency',
-          currency: locale === 'ar' ? 'SAR' : 'USD',
+          currency: locale === 'ar' ? 'TND' : 'USD',
         },
         percent: {
           style: 'percent',

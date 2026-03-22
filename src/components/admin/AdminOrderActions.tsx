@@ -15,7 +15,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { AlertTriangle, CheckCircle, FileText, Loader2, Package, Truck, XCircle } from 'lucide-react';
+import { AlertTriangle, CheckCircle, Loader2, Package, Truck, XCircle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
@@ -27,7 +27,6 @@ interface AdminOrderActionsProps {
 export default function AdminOrderActions({ orderId, currentStatus }: AdminOrderActionsProps) {
   const [isConfirming, setIsConfirming] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false);
-  const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
 
   const router = useRouter();
@@ -102,52 +101,6 @@ export default function AdminOrderActions({ orderId, currentStatus }: AdminOrder
       });
     } finally {
       setIsCancelling(false);
-    }
-  };
-
-  const generateInvoicePDF = async () => {
-    setIsGeneratingPDF(true);
-
-    try {
-      const response = await fetch('/api/admin/orders/generate-invoice', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ orderId }),
-      });
-
-      if (!response.ok) {
-        throw new Error('فشل في إنشاء الفاتورة');
-      }
-
-      // Get the PDF blob
-      const blob = await response.blob();
-
-      // Create download link
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `invoice-${orderId.slice(-8)}.pdf`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
-
-      toast({
-        title: 'تم إنشاء الفاتورة',
-        description: 'تم إنشاء وتحميل فاتورة PDF بنجاح.',
-        variant: 'default',
-      });
-    } catch (error) {
-      console.error('Error generating PDF:', error);
-      toast({
-        title: 'خطأ في إنشاء الفاتورة',
-        description: 'حدث خطأ أثناء إنشاء الفاتورة. يرجى المحاولة مرة أخرى.',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsGeneratingPDF(false);
     }
   };
 
@@ -304,23 +257,6 @@ export default function AdminOrderActions({ orderId, currentStatus }: AdminOrder
                 <>
                   <Truck className='w-4 h-4 mr-2' />
                   تم الشحن
-                </>
-              )}
-            </Button>
-          )}
-
-          {/* Generate PDF Invoice - Only available after confirmation */}
-          {['Confirmed', 'Processing', 'Shipped', 'Delivered'].includes(currentStatus) && (
-            <Button onClick={generateInvoicePDF} variant='outline' className='w-full' disabled={isGeneratingPDF}>
-              {isGeneratingPDF ? (
-                <>
-                  <Loader2 className='w-4 h-4 mr-2 animate-spin' />
-                  جاري إنشاء الفاتورة...
-                </>
-              ) : (
-                <>
-                  <FileText className='w-4 h-4 mr-2' />
-                  إنشاء فاتورة PDF
                 </>
               )}
             </Button>

@@ -15,7 +15,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { CheckCircle, Download, Loader2, Truck, XCircle, Package } from 'lucide-react';
+import { CheckCircle, Loader2, Truck, XCircle, Package } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
@@ -28,7 +28,6 @@ export default function SimpleAdminOrderActions({ orderId, currentStatus }: Simp
   const [isConfirming, setIsConfirming] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
-  const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
 
   const router = useRouter();
   const { toast } = useToast();
@@ -138,65 +137,6 @@ export default function SimpleAdminOrderActions({ orderId, currentStatus }: Simp
     }
   };
 
-  const generatePDF = async () => {
-    setIsGeneratingPDF(true);
-
-    try {
-      const response = await fetch('/api/admin/orders/generate-invoice', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ orderId }),
-      });
-
-      if (!response.ok) {
-        // Gestion spécifique pour les commandes annulées
-        if (response.status === 400) {
-          const errorData = await response.json();
-          throw new Error(errorData.message || 'لا يمكن إنشاء فاتورة للطلبات الملغاة');
-        }
-        throw new Error('فشل في إنشاء الفاتورة');
-      }
-
-      // تحويل الاستجابة إلى blob
-      const blob = await response.blob();
-
-      // إنشاء رابط تحميل
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-
-      // تحديد اسم الملف
-      const orderDate = new Date();
-      const invoiceNumber = `INV-${orderDate.getFullYear()}${String(orderDate.getMonth() + 1).padStart(2, '0')}-${orderId.slice(-6).toUpperCase()}`;
-      link.download = `facture-${invoiceNumber}.pdf`;
-
-      // تحميل الملف
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-
-      // تنظيف الرابط
-      window.URL.revokeObjectURL(url);
-
-      toast({
-        title: 'تم إنشاء الفاتورة',
-        description: 'تم إنشاء وتحميل فاتورة PDF بنجاح.',
-        variant: 'default',
-      });
-    } catch (error) {
-      console.error('Error generating PDF:', error);
-      toast({
-        title: 'خطأ في إنشاء الفاتورة',
-        description: 'حدث خطأ أثناء إنشاء فاتورة PDF. يرجى المحاولة مرة أخرى.',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsGeneratingPDF(false);
-    }
-  };
-
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'Pending Confirmation':
@@ -232,7 +172,6 @@ export default function SimpleAdminOrderActions({ orderId, currentStatus }: Simp
   const canMarkProcessing = currentStatus === 'Confirmed';
   const canMarkShipped = currentStatus === 'Processing';
   const canMarkDelivered = currentStatus === 'Shipped';
-  const canGeneratePDF = !['Cancelled'].includes(currentStatus); // Pas de facture pour les commandes annulées
 
   return (
     <Card>
@@ -248,40 +187,6 @@ export default function SimpleAdminOrderActions({ orderId, currentStatus }: Simp
           <p className='text-sm text-gray-600 mb-2'>الحالة الحالية:</p>
           <Badge className={getStatusColor(currentStatus)}>{getStatusText(currentStatus)}</Badge>
         </div>
-
-        {/* PDF Generation - Only for non-cancelled orders */}
-        {canGeneratePDF && (
-          <div>
-            <Button
-              onClick={generatePDF}
-              disabled={isGeneratingPDF}
-              className='w-full bg-purple-600 hover:bg-purple-700 text-white'
-            >
-              {isGeneratingPDF ? (
-                <>
-                  <Loader2 className='w-4 h-4 mr-2 animate-spin' />
-                  جاري إنشاء الفاتورة...
-                </>
-              ) : (
-                <>
-                  <Download className='w-4 h-4 mr-2' />
-                  تحميل فاتورة PDF
-                </>
-              )}
-            </Button>
-          </div>
-        )}
-
-        {/* Message for cancelled orders */}
-        {currentStatus === 'Cancelled' && (
-          <div className='p-3 bg-gray-50 border border-gray-200 rounded-lg'>
-            <p className='text-gray-600 text-sm text-center'>
-              📋 لا يمكن إنشاء فاتورة للطلبات الملغاة
-              <br />
-              <span className='text-xs'>Aucune facture disponible pour les commandes annulées</span>
-            </p>
-          </div>
-        )}
 
         {/* Actions */}
         <div className='grid grid-cols-1 gap-3'>
