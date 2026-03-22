@@ -1,7 +1,7 @@
 import { track } from '@vercel/analytics';
 import { businessMetricsTracker } from './business';
 import { metricsCollector } from './metrics';
-import { config } from '../config';
+import { monitoringConfig } from './config';
 
 // Vercel Analytics integration service
 export class VercelAnalyticsService {
@@ -9,7 +9,7 @@ export class VercelAnalyticsService {
   private isEnabled: boolean;
 
   private constructor() {
-    this.isEnabled = config.features.enableAnalytics && config.app.environment === 'production';
+    this.isEnabled = monitoringConfig.enableAnalytics && monitoringConfig.isProduction;
   }
 
   public static getInstance(): VercelAnalyticsService {
@@ -252,7 +252,7 @@ export class VercelAnalyticsService {
     // For now, we'll just track a sync event
     this.trackEvent('metrics_sync', {
       timestamp: Date.now(),
-      environment: config.app.environment,
+      environment: monitoringConfig.environment,
     });
   }
 }

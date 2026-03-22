@@ -3,12 +3,12 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { createClientComponent } from '@/lib/supabase/client';
-import { DataTable } from '@/components/data-table';
+import { DataTable } from '@/components/DataTable';
 import Link from 'next/link'; // Import Link
 import { Button } from '@/components/ui/button'; // Import Button
 
 import { Row } from '@tanstack/react-table'; // Import Row type
-import { ConfirmationModal } from '@/components/confirmation-modal'; // Ensure ConfirmationModal is imported at the top
+import { ConfirmationModal } from '@/components/ConfirmationModal'; // Ensure ConfirmationModal is imported at the top
 
 interface Product {
   id: string;

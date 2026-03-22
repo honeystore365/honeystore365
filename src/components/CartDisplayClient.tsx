@@ -10,7 +10,6 @@ import ClearCartButton from '@/components/ClearCartButton';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
-import { createClient } from '@/lib/supabase/client';
 
 // Types should match those in cart/page.tsx and cartActions.ts
 interface CartProduct {

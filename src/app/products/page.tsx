@@ -1,27 +1,15 @@
-
-
 import { createClientServer } from "@/lib/supabase/server";
-// Image is now used within ProductCardClient
-import ProductCardClient from "@/components/ProductCardClient"; // Import the client component
-
-// Define a type for the product (ensure consistency with other files)
-interface Product {
-  id: string;
-  name: string | null;
-  description: string | null;
-  price: number | null;
-  image_url: string | null;
-}
+import ProductCardClient from "@/components/ProductCardClient";
+import type { ProductRow } from "@/types/business/product";
 
 export default async function ProductsPage() {
-  const supabase = await createClientServer(); // Await the promise
+  const supabase = await createClientServer();
   const { data: products, error } = await supabase
     .from("products")
-    .select("id, name, description, price, image_url");
+    .select("id, name, description, price, image_url, stock, created_at");
 
   if (error) {
     console.error("Error fetching products:", error);
-    // Optionally, render an error message to the user
     return <p>Error loading products. Please try again later.</p>;
   }
 
@@ -48,7 +36,6 @@ export default async function ProductsPage() {
             <option>الكل</option>
             <option>عسل طبيعي</option>
             <option>منتجات النحل</option>
-            {/* Add more options here */}
           </select>
         </div>
 
@@ -71,8 +58,7 @@ export default async function ProductsPage() {
 
       {/* Product List */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-        {products.map((product: Product) => (
-          // Use the client component for rendering each product card
+        {products.map((product) => (
           <ProductCardClient key={product.id} product={product} />
         ))}
       </div>

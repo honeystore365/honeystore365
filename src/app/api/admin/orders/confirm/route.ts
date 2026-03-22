@@ -1,5 +1,6 @@
-import { createClient } from '@supabase/supabase-js';
 import { NextRequest, NextResponse } from 'next/server';
+import { orderService } from '@/services/orders';
+import { OrderStatus } from '@/types/enums';
 
 export async function POST(request: NextRequest) {
   try {
@@ -12,46 +13,20 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Utiliser directement la service key pour les opérations admin
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    );
+    const result = await orderService.updateOrderStatus({
+      orderId,
+      status: OrderStatus.CONFIRMED,
+      notes: 'Order confirmed via admin API',
+    });
 
-    // Vérifier que la commande existe
-    const { data: existingOrder, error: checkError } = await supabase
-      .from('orders')
-      .select('id, status')
-      .eq('id', orderId)
-      .single();
-
-    if (checkError || !existingOrder) {
+    if (!result.success) {
       return NextResponse.json(
-        { error: 'Order not found' },
-        { status: 404 }
+        { error: result.error?.message || 'Failed to confirm order' },
+        { status: 400 }
       );
     }
 
-    // Update order status to confirmed
-    const { error: updateError } = await supabase
-      .from('orders')
-      .update({ 
-        status: 'Confirmed'
-      })
-      .eq('id', orderId);
-
-    if (updateError) {
-      console.error('Error confirming order:', updateError);
-      return NextResponse.json(
-        { error: 'Failed to confirm order' },
-        { status: 500 }
-      );
-    }
-
-    // TODO: Send notification to customer (email, SMS, etc.)
-    // You can implement notification logic here
-
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true, order: result.data });
 
   } catch (error) {
     console.error('Error in confirm order API:', error);

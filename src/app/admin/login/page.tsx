@@ -3,8 +3,8 @@
  * Version robuste et simplifiée
  */
 
-import SimpleRobustAdminLogin from './simple-robust-login';
+import AdminLoginClient from './admin-login-client';
 
 export default function AdminLoginPage() {
-  return <SimpleRobustAdminLogin />;
+  return <AdminLoginClient />;
 }

@@ -1,7 +1,7 @@
 'use client';
 
 import { usePathname } from 'next/navigation';
-import { SiteHeader } from '@/components/site-header';
+import { SiteHeader } from '@/components/layout';
 import { AdminHeader } from '@/components/admin/admin-header';
 
 export function ConditionalHeader() {

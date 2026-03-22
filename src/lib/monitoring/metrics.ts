@@ -1,4 +1,4 @@
-import { config } from '../config';
+import { monitoringConfig } from './config';
 import { logBusinessEvent, logger } from '../logger';
 // import { sentryService } from './sentry'; // Sentry disabled
 const sentryService: { 
@@ -23,7 +23,7 @@ export class MetricsCollector {
 
   private constructor() {
     // Start periodic flush in production
-    if (config.app.environment === 'production') {
+    if (monitoringConfig.isProduction) {
       this.startPeriodicFlush();
     }
   }
@@ -274,7 +274,7 @@ export class MetricsCollector {
 
   // Send metrics to external services
   private sendToSentry(metric: BusinessMetric): void {
-    if (!config.monitoring.enablePerformanceMonitoring) return;
+    if (!monitoringConfig.enablePerformanceMonitoring) return;
 
     try {
       if (sentryService?.capturePerformanceMetric) {

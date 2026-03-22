@@ -96,21 +96,20 @@ export function isValidPhoneNumber(phone: string | null | undefined): boolean {
 export function formatPhoneNumber(phone: string | null | undefined): string {
   if (!phone?.trim()) return 'غير محدد';
   
-  // Add basic formatting - adjust as needed
   const cleanPhone = phone.replace(/[\s\-\(\)]/g, '');
   
-  // For Saudi numbers starting with +966 or 966
-  if (cleanPhone.startsWith('+966')) {
-    return cleanPhone.replace('+966', '+966 ').replace(/(\d{2})(\d{3})(\d{4})/, '$1 $2 $3');
+  // For Tunisian numbers starting with +216 or 216
+  if (cleanPhone.startsWith('+216')) {
+    return cleanPhone.replace('+216', '+216 ').replace(/(\d{3})(\d{3})(\d{3})/, '$1 $2 $3');
   }
   
-  if (cleanPhone.startsWith('966')) {
-    return '+' + cleanPhone.replace('966', '966 ').replace(/(\d{3})(\d{2})(\d{3})(\d{4})/, '$1 $2 $3 $4');
+  if (cleanPhone.startsWith('216')) {
+    return '+' + cleanPhone.replace(/(\d{3})(\d{3})(\d{3})/, '$1 $2 $3');
   }
   
-  // For local numbers starting with 05
-  if (cleanPhone.startsWith('05')) {
-    return cleanPhone.replace(/(\d{2})(\d{4})(\d{4})/, '$1 $2 $3');
+  // For local Tunisian numbers starting with 2, 5, 7, 9 (mobile) or 7, 3 (landline)
+  if (/^[2597]\d{7}$/.test(cleanPhone)) {
+    return cleanPhone.replace(/(\d{2})(\d{3})(\d{3})/, '$1 $2 $3');
   }
   
   return phone;

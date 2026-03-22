@@ -1,5 +1,5 @@
 import ProfileForm from '@/components/ProfileForm';
-import { createClientServerReadOnly } from '@/lib/supabase/server-readonly';
+import { createClientServerReadOnly } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 
 export default async function ProfileEditPage() {

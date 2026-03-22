@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { createClientComponent } from '@/lib/supabase/client'; // Changed import
-import { CustomForm } from '@/components/form';
+import { CustomForm } from '@/components/Form';
 import { useRouter } from 'next/navigation';
 import { useParams } from 'next/navigation';
 import * as z from "zod"

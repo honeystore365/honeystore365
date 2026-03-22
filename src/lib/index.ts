@@ -1,24 +1,12 @@
-// Main lib exports
-// export * from './config'; // Config disabled
-export * from './errors';
-// Export logger but exclude logError to avoid conflict with errors
-export {
-    LogLevel,
-    createRequestLogger,
-    logBusinessEvent,
-    logDebug,
-    logInfo,
-    logPerformance,
-    logSecurityEvent,
-    logWarn, logger, type ILogger,
-    type LogEntry,
-    type LogMetadata
-} from './logger';
-export * from './supabase';
-export * from './utils';
-export * from './validation';
+// HoneyStore365 - Central Library Exports
+// Explicit re-exports to avoid duplicate export errors
 
-// Legacy exports for backward compatibility (will be removed in future tasks)
+// Errors
+export { BusinessError, NetworkError, ValidationError, logError } from './errors';
+
+// Supabase
 export { createClientComponent } from './supabase/client';
-export { createClientServer } from './supabase/server';
-export { createClientServerReadOnly } from './supabase/server-readonly';
+export { createClientServer, createClientServerReadOnly, createClientServerServiceRole } from './supabase/server';
+
+// Auth
+export { isAdminEmail } from './auth/admin-auth';

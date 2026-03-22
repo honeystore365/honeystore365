@@ -1,4 +1,4 @@
-import { config } from '../config';
+import { monitoringConfig } from './config';
 import { logPerformance } from '../logger';
 // import { sentryService } from './sentry'; // Sentry disabled
 const sentryService: { 
@@ -33,7 +33,7 @@ export class PerformanceMonitor {
     });
 
     // Start Sentry transaction if enabled
-    if (config.monitoring.enablePerformanceMonitoring && sentryService?.startTransaction) {
+    if (monitoringConfig.enablePerformanceMonitoring && sentryService?.startTransaction) {
       const transaction = sentryService.startTransaction(
         operationName,
         'operation',
@@ -67,7 +67,7 @@ export class PerformanceMonitor {
     });
 
     // Send to Sentry
-    if (config.monitoring.enablePerformanceMonitoring && sentryService?.capturePerformanceMetric) {
+    if (monitoringConfig.enablePerformanceMonitoring && sentryService?.capturePerformanceMetric) {
       sentryService.capturePerformanceMetric(
         `operation.${timingInfo.operationName}`,
         duration,
@@ -135,7 +135,7 @@ export class PerformanceMonitor {
     unit: string = 'millisecond',
     tags?: Record<string, string>
   ): void {
-    if (config.monitoring.enablePerformanceMonitoring && sentryService?.capturePerformanceMetric) {
+    if (monitoringConfig.enablePerformanceMonitoring && sentryService?.capturePerformanceMetric) {
       sentryService.capturePerformanceMetric(name, value, unit, tags);
     }
 

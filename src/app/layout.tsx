@@ -2,13 +2,13 @@ import type {Metadata} from 'next';
 import './globals.css';
 import {SidebarProvider} from '@/components/ui/sidebar';
 import {Toaster} from '@/components/ui/toaster';
-import { ChatbotPopup } from '@/components/chatbot-popup';
+import { ChatbotPopup } from '@/components/ChatbotPopup';
 
 import { createClientServer } from '@/lib/supabase/server'; // Import server client
 import { SessionProvider } from '@/context/SessionProvider'; // Import SessionProvider
-import { ConditionalHeader } from '@/components/conditional-header';
-import { ConditionalMain } from '@/components/conditional-main';
-import { ConditionalProviders } from '@/components/conditional-providers';
+import { ConditionalHeader } from '@/components/ConditionalHeader';
+import { ConditionalMain } from '@/components/ConditionalMain';
+import { ConditionalProviders } from '@/components/ConditionalProviders';
 import { Analytics } from '@vercel/analytics/react';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 

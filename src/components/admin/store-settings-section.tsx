@@ -5,12 +5,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { createClient } from '@/lib/supabase';
+import { storeSettingsService } from '@/services/store-settings';
+import type { UpdateStoreSettingsInput } from '@/services/store-settings';
 import { Edit2, Save, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
-interface StoreSettings {
+interface StoreSettingsUI {
   id: string;
   store_name: string;
   store_description?: string;
@@ -23,8 +24,7 @@ interface StoreSettings {
 }
 
 export default function StoreSettingsSection() {
-  const supabase = createClient();
-  const [settings, setSettings] = useState<StoreSettings | null>(null);
+  const [settings, setSettings] = useState<StoreSettingsUI | null>(null);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
   const [formData, setFormData] = useState({
@@ -43,12 +43,7 @@ export default function StoreSettingsSection() {
 
   const loadSettings = async () => {
     try {
-      const { data, error } = await supabase.from('store_settings').select('*').single();
-
-      if (error && error.code !== 'PGRST116') {
-        throw error;
-      }
-
+      const data = await storeSettingsService.getSettings();
       if (data) {
         setSettings(data);
         setFormData({
@@ -71,23 +66,22 @@ export default function StoreSettingsSection() {
 
   const handleSave = async () => {
     try {
-      if (settings) {
-        // Mise à jour
-        const { error } = await supabase.from('store_settings').update(formData).eq('id', settings.id);
+      const input: UpdateStoreSettingsInput = {
+        store_name: formData.store_name,
+        store_description: formData.store_description,
+        contact_email: formData.contact_email,
+        contact_phone: formData.contact_phone,
+        address: formData.address,
+        tax_rate: formData.tax_rate,
+        currency: formData.currency,
+      };
 
-        if (error) throw error;
-
-        setSettings({ ...settings, ...formData });
-      } else {
-        // Création
-        const { data, error } = await supabase.from('store_settings').insert([formData]).select().single();
-
-        if (error) throw error;
-        setSettings(data);
+      const updated = await storeSettingsService.updateSettings(input);
+      if (updated) {
+        setSettings(updated);
+        setEditing(false);
+        toast.success('Paramètres sauvegardés avec succès');
       }
-
-      setEditing(false);
-      toast.success('Paramètres sauvegardés avec succès');
     } catch (error) {
       console.error('Erreur lors de la sauvegarde:', error);
       toast.error('Erreur lors de la sauvegarde');

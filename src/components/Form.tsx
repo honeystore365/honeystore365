@@ -20,7 +20,7 @@ import * as z from "zod"
 import React, { useEffect } from 'react'; // Keep React for useEffect, remove useState
 
 import { FieldPath } from 'react-hook-form'; // Import FieldPath
-import { ImageUploadField } from './image-upload-field'; // Import the new component
+import { ImageUploadField } from './ImageUploadField'; // Import the renamed component
 
 interface FormProps<T extends z.ZodType<any, any, any>> {
   schema: T;

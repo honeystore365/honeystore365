@@ -2,7 +2,7 @@ import ErrorPage from '@/components/ErrorPage';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { createClientServerReadOnly } from '@/lib/supabase/server-readonly';
+import { createClientServerReadOnly } from '@/lib/supabase/server';
 import { Eye, ShoppingBag } from 'lucide-react';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';

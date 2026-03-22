@@ -1,5 +1,6 @@
-import { createClient } from '@supabase/supabase-js';
 import { NextRequest, NextResponse } from 'next/server';
+import { orderService } from '@/services/orders';
+import { OrderStatus } from '@/types/enums';
 
 export async function POST(request: NextRequest) {
   try {
@@ -12,63 +13,38 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validate status
-    const validStatuses = [
-      'Pending Confirmation',
-      'Confirmed',
-      'Processing',
-      'Shipped',
-      'Delivered',
-      'Cancelled'
-    ];
+    // Map string status to OrderStatus enum
+    const statusMap: Record<string, OrderStatus> = {
+      'Pending Confirmation': OrderStatus.PENDING,
+      'Confirmed': OrderStatus.CONFIRMED,
+      'Processing': OrderStatus.PROCESSING,
+      'Shipped': OrderStatus.SHIPPED,
+      'Delivered': OrderStatus.DELIVERED,
+      'Cancelled': OrderStatus.CANCELLED,
+    };
 
-    if (!validStatuses.includes(status)) {
+    const orderStatus = statusMap[status];
+    if (!orderStatus) {
       return NextResponse.json(
         { error: 'Invalid status' },
         { status: 400 }
       );
     }
 
-    // Utiliser directement la service key pour les opérations admin
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    );
+    const result = await orderService.updateOrderStatus({
+      orderId,
+      status: orderStatus,
+      notes: `Status updated via admin API`,
+    });
 
-    // Vérifier que la commande existe
-    const { data: existingOrder, error: checkError } = await supabase
-      .from('orders')
-      .select('id, status')
-      .eq('id', orderId)
-      .single();
-
-    if (checkError || !existingOrder) {
+    if (!result.success) {
       return NextResponse.json(
-        { error: 'Order not found' },
-        { status: 404 }
+        { error: result.error?.message || 'Failed to update order status' },
+        { status: 400 }
       );
     }
 
-    // Update order status
-    const { error: updateError } = await supabase
-      .from('orders')
-      .update({ 
-        status: status
-      })
-      .eq('id', orderId);
-
-    if (updateError) {
-      console.error('Error updating order status:', updateError);
-      return NextResponse.json(
-        { error: 'Failed to update order status' },
-        { status: 500 }
-      );
-    }
-
-    // TODO: Send notification to customer based on status change
-    // You can implement notification logic here
-
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true, order: result.data });
 
   } catch (error) {
     console.error('Error in update status API:', error);

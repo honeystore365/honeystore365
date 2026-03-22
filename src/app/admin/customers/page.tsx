@@ -2,10 +2,10 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { createClientComponent } from '@/lib/supabase/client';
-import { DataTable } from '@/components/data-table';
+import { DataTable } from '@/components/DataTable';
 import { ColumnDef } from '@tanstack/react-table';
 import { Button } from '@/components/ui/button';
-import { ConfirmationModal } from '@/components/confirmation-modal';
+import { ConfirmationModal } from '@/components/ConfirmationModal';
 import {
   Dialog,
   DialogContent,

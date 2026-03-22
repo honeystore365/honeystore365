@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { createClientComponent } from '@/lib/supabase/client';
-import { CustomForm } from '@/components/form';
+import { CustomForm } from '@/components/Form';
 import { useRouter } from 'next/navigation';
 import * as z from "zod"
 import { FieldPath } from 'react-hook-form';
