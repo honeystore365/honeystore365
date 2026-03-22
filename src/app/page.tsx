@@ -58,6 +58,7 @@ export default async function Home() {
 
       {/* Featured Products */}
       <section className="mt-16">
+        {/* DEPLOY_MARKER: v2 - if you see "مناحل الرحيق" in title, new build is live */}
         <h2 className="text-4xl font-bold mb-12 text-center">
           منتجاتنا المميزة
         </h2>
